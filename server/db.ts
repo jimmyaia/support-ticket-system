@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertTicket,
@@ -73,6 +73,39 @@ export async function updateLastSignedIn(userId: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
+}
+
+// Get the first admin user for a given tenant (used for impersonation)
+export async function getFirstAdminForTenant(tenantId: number): Promise<User | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.tenantId, tenantId), eq(users.role, "admin")))
+    .orderBy(asc(users.id))
+    .limit(1);
+  return result[0];
+}
+
+// Global cross-tenant ticket search for super admins
+export async function searchTicketsGlobal(query: string, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  const q = `%${query.trim()}%`;
+  return db
+    .select()
+    .from(tickets)
+    .where(
+      or(
+        like(tickets.ticketNumber, q),
+        like(tickets.name, q),
+        like(tickets.email, q),
+        like(tickets.subject, q),
+      )
+    )
+    .orderBy(desc(tickets.createdAt))
+    .limit(limit);
 }
 
 export async function getAllStaff(tenantId?: number) {

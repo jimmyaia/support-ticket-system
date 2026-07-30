@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Home,
 } from "lucide-react";
+import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation as useWouterLocation } from "wouter";
 
@@ -54,6 +55,7 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   const navItems = [
     { href: "/superadmin", label: "Overview", icon: LayoutDashboard },
     { href: "/superadmin/tenants", label: "Client Tenants", icon: Building2 },
+    { href: "/superadmin/search", label: "Global Search", icon: Search },
   ];
 
   return (

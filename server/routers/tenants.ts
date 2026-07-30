@@ -16,9 +16,13 @@ import {
   listTenants,
   updateTenant,
   getUserByEmail,
+  getFirstAdminForTenant,
+  searchTicketsGlobal,
 } from "../db";
-import { hashPassword } from "../_core/authService";
+import { hashPassword, createSessionToken, verifySessionToken } from "../_core/authService";
 import { protectedProcedure, router } from "../_core/trpc";
+import { COOKIE_NAME, IMPERSONATE_COOKIE_NAME } from "@shared/const";
+import { getSessionCookieOptions } from "../_core/cookies";
 
 // Only super-admins (role=admin, no tenantId) can manage tenants
 const superAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -61,6 +65,99 @@ export const tenantsRouter = router({
       return { success: true };
     }),
 
+  // ── IMPERSONATION ─────────────────────────────────────────────────────────
+  // Super admin: start impersonating a tenant's admin account
+  startImpersonation: superAdminProcedure
+    .input(z.object({ tenantId: z.number().int() }))
+    .mutation(async ({ input, ctx }) => {
+      const tenant = await getTenantById(input.tenantId);
+      if (!tenant) throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      if (!tenant.isActive) throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot impersonate a suspended tenant" });
+
+      // Find the tenant's admin user
+      const tenantAdmin = await getFirstAdminForTenant(input.tenantId);
+      if (!tenantAdmin) throw new TRPCError({ code: "NOT_FOUND", message: "This tenant has no admin user yet. Create one first." });
+
+      // Save the super admin's current session token as the impersonation backup cookie
+      const currentToken = ctx.req.cookies?.[COOKIE_NAME];
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+
+      // Create a session token for the tenant admin
+      const tenantToken = await createSessionToken(tenantAdmin.id, tenantAdmin.email!, tenantAdmin.role);
+
+      // Set backup cookie (super admin's real session) and swap main session to tenant admin
+      ctx.res.cookie(IMPERSONATE_COOKIE_NAME, currentToken, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 2 }); // 2h backup
+      ctx.res.cookie(COOKIE_NAME, tenantToken, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 2 });
+
+      return {
+        success: true,
+        tenantName: tenant.name,
+        tenantAdminEmail: tenantAdmin.email,
+      };
+    }),
+
+  // Any user: exit impersonation and restore super admin session
+  exitImpersonation: protectedProcedure.mutation(async ({ ctx }) => {
+    const backupToken = ctx.req.cookies?.[IMPERSONATE_COOKIE_NAME];
+    if (!backupToken) throw new TRPCError({ code: "BAD_REQUEST", message: "No active impersonation session" });
+
+    // Verify the backup token is valid
+    const session = await verifySessionToken(backupToken);
+    if (!session) throw new TRPCError({ code: "UNAUTHORIZED", message: "Impersonation backup token is invalid or expired" });
+
+    const cookieOptions = getSessionCookieOptions(ctx.req);
+
+    // Restore super admin session and clear impersonation cookie
+    ctx.res.cookie(COOKIE_NAME, backupToken, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 24 * 7 });
+    ctx.res.clearCookie(IMPERSONATE_COOKIE_NAME, { ...cookieOptions });
+
+    return { success: true };
+  }),
+
+  // Check if currently impersonating (returns impersonation state)
+  impersonationStatus: protectedProcedure.query(async ({ ctx }) => {
+    const backupToken = ctx.req.cookies?.[IMPERSONATE_COOKIE_NAME];
+    if (!backupToken) return { isImpersonating: false };
+
+    const session = await verifySessionToken(backupToken);
+    if (!session) return { isImpersonating: false };
+
+    // Current user is the impersonated tenant admin
+    const tenantId = ctx.user.tenantId;
+    const tenantName = tenantId ? (await getTenantById(tenantId))?.name : null;
+
+    return {
+      isImpersonating: true,
+      tenantId,
+      tenantName,
+      impersonatedEmail: ctx.user.email,
+    };
+  }),
+
+  // ── CROSS-TENANT SEARCH ───────────────────────────────────────────────────
+  // Super admin: search tickets across all tenants
+  searchAllTickets: superAdminProcedure
+    .input(z.object({ query: z.string().min(1).max(200), limit: z.number().int().max(100).default(50) }))
+    .query(async ({ input }) => {
+      const results = await searchTicketsGlobal(input.query, input.limit);
+      // Enrich with tenant names
+      const tenantIds = Array.from(new Set(results.map((r) => r.tenantId).filter(Boolean)));
+      const tenantMap: Record<number, string> = {};
+      await Promise.all(
+        tenantIds.map(async (id) => {
+          if (id) {
+            const t = await getTenantById(id);
+            if (t) tenantMap[id] = t.name;
+          }
+        })
+      );
+      return results.map((r) => ({
+        ...r,
+        tenantName: r.tenantId ? (tenantMap[r.tenantId] ?? `Tenant #${r.tenantId}`) : "Legacy",
+      }));
+    }),
+
+  // ── TENANT MANAGEMENT ─────────────────────────────────────────────────────
   // Super admin: list all tenants with stats
   list: superAdminProcedure.query(async () => {
     const all = await listTenants();
@@ -102,15 +199,10 @@ export const tenantsRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      // Check slug uniqueness
       const existing = await getTenantBySlug(input.slug);
       if (existing) throw new TRPCError({ code: "CONFLICT", message: "A tenant with this slug already exists." });
-
-      // Check admin email uniqueness
       const existingUser = await getUserByEmail(input.adminEmail);
       if (existingUser) throw new TRPCError({ code: "CONFLICT", message: "A user with this email already exists." });
-
-      // Create tenant
       const tenant = await createTenant({
         name: input.name,
         slug: input.slug,
@@ -119,8 +211,6 @@ export const tenantsRouter = router({
         logoUrl: input.logoUrl || null,
         internalNotes: input.internalNotes || null,
       });
-
-      // Create tenant admin user
       const passwordHash = await hashPassword(input.adminPassword);
       await createUser({
         name: input.adminName,
@@ -129,7 +219,6 @@ export const tenantsRouter = router({
         role: "admin",
         tenantId: tenant.id,
       });
-
       return { tenant };
     }),
 
@@ -152,7 +241,6 @@ export const tenantsRouter = router({
     )
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      // Clean empty strings to null
       const cleaned: any = { ...data };
       if (cleaned.ghlWebhookUrl === "") cleaned.ghlWebhookUrl = null;
       if (cleaned.ghlApiKey === "") cleaned.ghlApiKey = null;
@@ -181,7 +269,6 @@ export const tenantsRouter = router({
   getProducts: tenantAdminProcedure
     .input(z.object({ tenantId: z.number().int() }))
     .query(async ({ input, ctx }) => {
-      // Tenant staff can only see their own tenant's products
       if (ctx.user.tenantId !== null && ctx.user.tenantId !== input.tenantId) {
         throw new TRPCError({ code: "FORBIDDEN" });
       }
@@ -263,7 +350,6 @@ export const tenantsRouter = router({
     .query(async ({ input }) => {
       const tenant = await getTenantBySlug(input.slug);
       if (!tenant || !tenant.isActive) throw new TRPCError({ code: "NOT_FOUND" });
-      // Return only public-safe fields
       return { id: tenant.id, name: tenant.name, slug: tenant.slug, logoUrl: tenant.logoUrl };
     }),
 });
