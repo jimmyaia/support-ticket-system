@@ -157,7 +157,7 @@ export default function SubmitTicket() {
                   <SelectValue placeholder="Select a product..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="go_highlevel">Go Highlevel</SelectItem>
+                  <SelectItem value="go_highlevel">GoHighLevel</SelectItem>
                   <SelectItem value="amply">Amply</SelectItem>
                 </SelectContent>
               </Select>
