@@ -46,13 +46,13 @@
 - [x] Vitest: auth.logout clears session cookie (8 tests total, all passing)
 
 ## Standalone Email/Password Auth Migration
-- [ ] Add passwordHash column to users table, make openId nullable, add email unique constraint
-- [ ] Add bcrypt password hashing; implement register, login, logout tRPC procedures
-- [ ] Replace Manus OAuth context/sdk with JWT session from email/password login
-- [ ] Replace OAuth callback route with email/password login/register API routes
-- [ ] Build Login page and Register page on frontend
-- [ ] Update useAuth hook to redirect to /login instead of startLogin()
-- [ ] Update AdminLayout to link to /login instead of startLogin()
-- [ ] Update main.tsx to redirect to /login on UNAUTHORIZED errors
-- [ ] Seed jimmy@aibizstrategist.com as admin with hashed password
-- [ ] Update tests for new auth system
+- [x] Add passwordHash column to users table, make openId nullable, add email unique constraint
+- [x] Add bcrypt password hashing; implement register, login, logout tRPC procedures
+- [x] Replace Manus OAuth context/sdk with JWT session from email/password login
+- [x] Replace OAuth callback route with email/password login/register API routes
+- [x] Build Login page and Register page on frontend
+- [x] Update useAuth hook to redirect to /login instead of startLogin()
+- [x] Update AdminLayout to link to /login instead of startLogin()
+- [x] Update main.tsx to redirect to /login on UNAUTHORIZED errors
+- [x] Seed jimmy@aibizstrategist.com as admin with hashed password
+- [x] Update tests for new auth system
