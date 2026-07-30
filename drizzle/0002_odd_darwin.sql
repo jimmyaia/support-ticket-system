@@ -1,0 +1,1 @@
+ALTER TABLE `tickets` ADD `product` enum('go_highlevel','amply') DEFAULT 'go_highlevel' NOT NULL;

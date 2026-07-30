@@ -16,6 +16,7 @@ const schema = z.object({
   name: z.string().min(1, "Name is required").max(255),
   email: z.string().email("Please enter a valid email").max(320),
   subject: z.string().min(1, "Subject is required").max(500),
+  product: z.enum(["go_highlevel", "amply"]),
   description: z.string().min(10, "Please provide at least 10 characters").max(5000),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   loomUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
@@ -31,7 +32,7 @@ export default function SubmitTicket() {
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { priority: "medium" },
+    defaultValues: { priority: "medium", product: "go_highlevel" },
   });
 
   const submitMutation = trpc.tickets.submit.useMutation({
@@ -83,6 +84,7 @@ export default function SubmitTicket() {
       name: data.name,
       email: data.email,
       subject: data.subject,
+      product: data.product,
       description: data.description,
       priority: data.priority,
       imageUrl: finalImageUrl,
@@ -147,6 +149,18 @@ export default function SubmitTicket() {
               <Label htmlFor="subject">Subject <span className="text-destructive">*</span></Label>
               <Input id="subject" placeholder="Brief description of your issue" {...register("subject")} className={errors.subject ? "border-destructive" : ""} />
               {errors.subject && <p className="text-xs text-destructive">{errors.subject.message}</p>}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Which product are you having trouble with? <span className="text-destructive">*</span></Label>
+              <Select defaultValue="go_highlevel" onValueChange={(v) => setValue("product", v as any)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a product..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="go_highlevel">Go Highlevel</SelectItem>
+                  <SelectItem value="amply">Amply</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="description">Description <span className="text-destructive">*</span></Label>

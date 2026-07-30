@@ -266,6 +266,7 @@ export default function AdminTicketDetail({ params }: Props) {
               {[
                 { label: "Submitted by", value: ticket.name },
                 { label: "Email", value: ticket.email },
+                { label: "Product", value: (ticket as any).product === "go_highlevel" ? "Go Highlevel" : (ticket as any).product === "amply" ? "Amply" : "—" },
                 { label: "Created", value: new Date(ticket.createdAt).toLocaleString() },
                 { label: "Last Updated", value: new Date(ticket.updatedAt).toLocaleString() },
                 ...(ticket.resolvedAt ? [{ label: "Resolved", value: new Date(ticket.resolvedAt).toLocaleString() }] : []),

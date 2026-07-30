@@ -28,6 +28,7 @@ export const ticketsRouter = router({
         name: z.string().min(1).max(255),
         email: z.string().email().max(320),
         subject: z.string().min(1).max(500),
+        product: z.enum(["go_highlevel", "amply"]).default("go_highlevel"),
         description: z.string().min(1),
         priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
         imageUrl: z.string().url().optional(),

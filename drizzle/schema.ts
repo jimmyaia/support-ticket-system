@@ -29,6 +29,7 @@ export const tickets = mysqlTable("tickets", {
   email: varchar("email", { length: 320 }).notNull(),
   subject: varchar("subject", { length: 500 }).notNull(),
   description: text("description").notNull(),
+  product: mysqlEnum("product", ["go_highlevel", "amply"]).notNull().default("go_highlevel"),
   priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium").notNull(),
   status: mysqlEnum("status", ["new", "in_progress", "stuck", "completed", "closed"]).default("new").notNull(),
   assigneeId: int("assigneeId"),
