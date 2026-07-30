@@ -85,3 +85,15 @@
 - [ ] Customer reply to ticket feature
 - [ ] Ticket search in admin panel
 - [ ] Activity log per ticket
+
+## Security & Code Quality
+- [x] Remove dead code: unused ComponentShowcase route, DashboardLayout OAuth startLogin reference, unused useRouter import
+- [x] Remove orphaned OAuth startLogin function from client/src/const.ts
+- [x] Add helmet security headers to Express server
+- [x] Add rate limiting: auth (10/15min), ticket submit (20/10min), file upload (10/10min), general API (300/min)
+- [x] Tighten body size limits from 50MB to 1MB JSON
+- [x] Add MIME type validation on file upload endpoint (images only)
+- [x] Shorten JWT session from 1 year to 7 days
+- [x] Add password strength requirements (uppercase + number) on registration
+- [x] Add max length to description (10000) and note content (10000) fields
+- [x] Set Express trust proxy=1 for correct IP detection behind Manus load balancer

@@ -20,7 +20,11 @@ export const appRouter = router({
       .input(z.object({
         name: z.string().min(1).max(255),
         email: z.string().email().max(320),
-        password: z.string().min(8, "Password must be at least 8 characters"),
+        password: z.string()
+          .min(8, "Password must be at least 8 characters")
+          .max(128, "Password must be at most 128 characters")
+          .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+          .regex(/[0-9]/, "Password must contain at least one number"),
       }))
       .mutation(async ({ input, ctx }) => {
         const existing = await db.getUserByEmail(input.email);
@@ -29,14 +33,14 @@ export const appRouter = router({
         const user = await db.createUser({ name: input.name, email: input.email, passwordHash });
         const token = await createSessionToken(user.id, user.email!, user.role);
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 24 * 365 });
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 24 * 7 });
         return { user: { id: user.id, name: user.name, email: user.email, role: user.role } };
       }),
 
     login: publicProcedure
       .input(z.object({
         email: z.string().email(),
-        password: z.string().min(1),
+        password: z.string().min(1).max(128),
       }))
       .mutation(async ({ input, ctx }) => {
         const user = await db.getUserByEmail(input.email);
@@ -50,7 +54,7 @@ export const appRouter = router({
         await db.updateLastSignedIn(user.id);
         const token = await createSessionToken(user.id, user.email!, user.role);
         const cookieOptions = getSessionCookieOptions(ctx.req);
-        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 24 * 365 });
+        ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 24 * 7 });
         return { user: { id: user.id, name: user.name, email: user.email, role: user.role } };
       }),
 

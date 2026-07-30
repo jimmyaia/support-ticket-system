@@ -35,7 +35,7 @@ export const ticketsRouter = router({
         phone: z.string().max(30).optional(),
         subject: z.string().min(1).max(500),
         product: z.string().min(1).max(255).default("General"),
-        description: z.string().min(1),
+        description: z.string().min(1).max(10000),
         priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
         imageUrl: z.string().url().optional(),
         loomUrl: z.string().url().optional(),
@@ -205,7 +205,7 @@ export const ticketsRouter = router({
 
   // Staff/Admin: add internal note
   addNote: staffOrAdminProcedure
-    .input(z.object({ ticketId: z.number(), content: z.string().min(1) }))
+    .input(z.object({ ticketId: z.number().int(), content: z.string().min(1).max(10000) }))
     .mutation(async ({ input, ctx }) => {
       const tenantId = ctx.user.tenantId ?? undefined;
       const ticket = await getTicketById(input.ticketId, tenantId);

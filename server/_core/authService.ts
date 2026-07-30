@@ -23,7 +23,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 export async function createSessionToken(userId: number, email: string, role: string): Promise<string> {
   const secret = getSecret();
-  const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365; // 1 year
+  const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7; // 7 days
   return new SignJWT({ userId, email, role })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setExpirationTime(expiresAt)

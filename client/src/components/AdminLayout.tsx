@@ -1,6 +1,6 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation, useRouter } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   BarChart3,
   HeadphonesIcon,
