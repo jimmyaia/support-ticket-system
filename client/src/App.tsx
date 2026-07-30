@@ -8,6 +8,8 @@ import Home from "./pages/Home";
 import SubmitTicket from "./pages/SubmitTicket";
 import TicketConfirmation from "./pages/TicketConfirmation";
 import CheckStatus from "./pages/CheckStatus";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminTickets from "./pages/admin/Tickets";
 import AdminTicketDetail from "./pages/admin/TicketDetail";
@@ -22,6 +24,8 @@ function Router() {
       <Route path="/submit" component={SubmitTicket} />
       <Route path="/ticket-submitted/:ticketNumber" component={TicketConfirmation} />
       <Route path="/check-status" component={CheckStatus} />
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
 
       {/* Admin routes */}
       <Route path="/admin" component={AdminDashboard} />

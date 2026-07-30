@@ -1,14 +1,12 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { startLogin } from "@/const";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useRouter } from "wouter";
 import {
   BarChart3,
   HeadphonesIcon,
   LayoutDashboard,
   Loader2,
   LogOut,
-  Settings,
   Ticket,
   Users,
 } from "lucide-react";
@@ -36,6 +34,7 @@ export default function AdminLayout({ children, title }: Props) {
     onSuccess: () => {
       utils.auth.me.invalidate();
       toast.success("Logged out successfully");
+      window.location.href = "/login";
     },
   });
 
@@ -56,9 +55,9 @@ export default function AdminLayout({ children, title }: Props) {
           </div>
           <h1 className="font-display text-2xl font-medium text-foreground mb-2">Admin Access</h1>
           <p className="text-muted-foreground mb-6 text-sm">Sign in to access the support team dashboard.</p>
-          <Button onClick={() => startLogin()} className="w-full gap-2">
-            Sign In to Continue
-          </Button>
+          <Link href="/login">
+            <Button className="w-full gap-2">Sign In to Continue</Button>
+          </Link>
         </div>
       </div>
     );
@@ -149,4 +148,3 @@ export default function AdminLayout({ children, title }: Props) {
     </div>
   );
 }
-

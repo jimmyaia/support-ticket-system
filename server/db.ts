@@ -1,7 +1,6 @@
 import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, InsertTicket, InsertTicketNote, tickets, ticketNotes, ticketAttachments, users } from "../drizzle/schema";
-import { ENV } from "./_core/env";
+import { InsertTicket, InsertTicketNote, tickets, ticketNotes, ticketAttachments, users, User } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -19,46 +18,40 @@ export async function getDb() {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) throw new Error("User openId is required for upsert");
-  const db = await getDb();
-  if (!db) return;
-
-  const values: InsertUser = { openId: user.openId };
-  const updateSet: Record<string, unknown> = {};
-
-  const textFields = ["name", "email", "loginMethod"] as const;
-  for (const field of textFields) {
-    const value = user[field];
-    if (value === undefined) continue;
-    const normalized = value ?? null;
-    values[field] = normalized;
-    updateSet[field] = normalized;
-  }
-
-  if (user.lastSignedIn !== undefined) {
-    values.lastSignedIn = user.lastSignedIn;
-    updateSet.lastSignedIn = user.lastSignedIn;
-  }
-  if (user.role !== undefined) {
-    values.role = user.role;
-    updateSet.role = user.role;
-  } else if (user.openId === ENV.ownerOpenId) {
-    values.role = "admin";
-    updateSet.role = "admin";
-  }
-
-  if (!values.lastSignedIn) values.lastSignedIn = new Date();
-  if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
-
-  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
-}
-
-export async function getUserByOpenId(openId: string) {
+export async function getUserByEmail(email: string): Promise<User | undefined> {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
   return result[0];
+}
+
+export async function getUserById(id: number): Promise<User | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createUser(data: { name: string; email: string; passwordHash: string; role?: "user" | "admin" | "staff" }): Promise<User> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(users).values({
+    name: data.name,
+    email: data.email,
+    passwordHash: data.passwordHash,
+    role: data.role ?? "user",
+    loginMethod: "email",
+    lastSignedIn: new Date(),
+  });
+  const created = await getUserByEmail(data.email);
+  if (!created) throw new Error("Failed to create user");
+  return created;
+}
+
+export async function updateLastSignedIn(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
 }
 
 export async function getAllStaff() {
@@ -69,13 +62,6 @@ export async function getAllStaff() {
     .from(users)
     .where(sql`${users.role} IN ('admin', 'staff')`)
     .orderBy(asc(users.name));
-}
-
-export async function getUserById(id: number) {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-  return result[0];
 }
 
 export async function updateUserRole(userId: number, role: "user" | "admin" | "staff") {
@@ -228,13 +214,7 @@ export async function getMonthlyStats(year: number, month: number) {
     .where(and(gte(tickets.createdAt, startDate), lte(tickets.createdAt, endDate)));
 
   const total = allTickets.length;
-  const byStatus = {
-    new: 0,
-    in_progress: 0,
-    stuck: 0,
-    completed: 0,
-    closed: 0,
-  };
+  const byStatus = { new: 0, in_progress: 0, stuck: 0, completed: 0, closed: 0 };
 
   let totalResolveMs = 0;
   let resolvedCount = 0;

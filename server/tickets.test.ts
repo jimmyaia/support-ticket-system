@@ -8,17 +8,18 @@ function makeStaffCtx(): TrpcContext {
   return {
     user: {
       id: 1,
-      openId: "staff-user",
+      openId: null,
       email: "staff@example.com",
       name: "Staff Member",
-      loginMethod: "manus",
+      passwordHash: null,
+      loginMethod: "email",
       role: "staff",
       createdAt: new Date(),
       updatedAt: new Date(),
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
   };
 }
 
@@ -26,7 +27,7 @@ function makePublicCtx(): TrpcContext {
   return {
     user: null,
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
   };
 }
 
@@ -34,17 +35,18 @@ function makeUserCtx(): TrpcContext {
   return {
     user: {
       id: 99,
-      openId: "regular-user",
+      openId: null,
       email: "user@example.com",
       name: "Regular User",
-      loginMethod: "manus",
+      passwordHash: null,
+      loginMethod: "email",
       role: "user",
       createdAt: new Date(),
       updatedAt: new Date(),
       lastSignedIn: new Date(),
     },
     req: { protocol: "https", headers: {} } as TrpcContext["req"],
-    res: { clearCookie: () => {} } as TrpcContext["res"],
+    res: { clearCookie: () => {}, cookie: () => {} } as TrpcContext["res"],
   };
 }
 
@@ -210,6 +212,7 @@ describe("auth.logout", () => {
       req: { protocol: "https", headers: {} } as TrpcContext["req"],
       res: {
         clearCookie: (name: string) => { clearedCookies.push(name); },
+        cookie: () => {},
       } as TrpcContext["res"],
     };
     const caller = appRouter.createCaller(ctx);
