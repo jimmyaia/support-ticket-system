@@ -1,0 +1,217 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import AdminLayout from "@/components/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { Building2, Package, Plus, Trash2, GripVertical, Settings } from "lucide-react";
+
+const settingsSchema = z.object({
+  name: z.string().min(1, "Company name is required").max(255),
+  logoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+});
+type SettingsForm = z.infer<typeof settingsSchema>;
+
+export default function TenantSettings() {
+  const { user } = useAuth();
+  const tenantId = (user as any)?.tenantId as number | null;
+  const [newProduct, setNewProduct] = useState("");
+
+  const { data: tenant, isLoading: tenantLoading, refetch: refetchTenant } = trpc.tenants.getMyTenant.useQuery(undefined, {
+    enabled: !!tenantId,
+  });
+
+  const { data: products, isLoading: productsLoading, refetch: refetchProducts } = trpc.tenants.getProducts.useQuery(
+    { tenantId: tenantId ?? 0 },
+    { enabled: !!tenantId }
+  );
+
+  const updateMyTenant = trpc.tenants.updateMyTenant.useMutation({
+    onSuccess: () => { toast.success("Settings saved"); refetchTenant(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const addProduct = trpc.tenants.addProduct.useMutation({
+    onSuccess: () => { setNewProduct(""); refetchProducts(); toast.success("Product added"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updateProduct = trpc.tenants.updateProduct.useMutation({
+    onSuccess: () => refetchProducts(),
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteProduct = trpc.tenants.deleteProduct.useMutation({
+    onSuccess: () => { refetchProducts(); toast.success("Product removed"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const { register, handleSubmit, formState: { errors } } = useForm<SettingsForm>({
+    resolver: zodResolver(settingsSchema),
+    values: tenant ? { name: tenant.name, logoUrl: tenant.logoUrl ?? "" } : undefined,
+  });
+
+  const onSave = (data: SettingsForm) => {
+    updateMyTenant.mutate({ name: data.name, logoUrl: data.logoUrl || "" });
+  };
+
+  if (!tenantId) {
+    return (
+      <AdminLayout title="Tenant Settings">
+        <div className="max-w-2xl mx-auto text-center py-16 text-muted-foreground">
+          <Settings className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p>Tenant settings are only available for tenant admin accounts.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout title="Tenant Settings">
+      <div className="max-w-3xl mx-auto space-y-8">
+        {/* Branding */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="w-5 h-5" />
+              Company Branding
+            </CardTitle>
+            <CardDescription>
+              Update your company name and logo. These appear on your support portal.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {tenantLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(onSave)} className="space-y-4">
+                <div className="flex items-center gap-4 mb-4">
+                  {tenant?.logoUrl ? (
+                    <img src={tenant.logoUrl} alt={tenant.name} className="w-14 h-14 rounded-xl object-cover border" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Building2 className="w-7 h-7 text-primary" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-foreground">{tenant?.name}</p>
+                    <p className="text-xs text-muted-foreground">{tenant?.slug}.aia-supportdesk.com</p>
+                    <Badge variant={tenant?.isActive ? "default" : "secondary"} className="text-xs mt-1">
+                      {tenant?.isActive ? "Active" : "Suspended"}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Company Name <span className="text-destructive">*</span></Label>
+                    <Input id="name" {...register("name")} className={errors.name ? "border-destructive" : ""} />
+                    {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="logoUrl">Logo URL</Label>
+                    <Input id="logoUrl" placeholder="https://example.com/logo.png" {...register("logoUrl")} className={errors.logoUrl ? "border-destructive" : ""} />
+                    {errors.logoUrl && <p className="text-xs text-destructive">{errors.logoUrl.message}</p>}
+                  </div>
+                </div>
+                <div className="flex justify-end pt-2">
+                  <Button type="submit" disabled={updateMyTenant.isPending}>
+                    {updateMyTenant.isPending ? "Saving..." : "Save Branding"}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Product Dropdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Product / Service Dropdown
+            </CardTitle>
+            <CardDescription>
+              These options appear in the "Which product are you having trouble with?" dropdown on your customer ticket form.
+              Toggle to show/hide without deleting.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Add new product */}
+            <div className="flex gap-2 mb-6">
+              <Input
+                placeholder="Add a product or service name..."
+                value={newProduct}
+                onChange={e => setNewProduct(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && newProduct.trim() && tenantId) {
+                    e.preventDefault();
+                    addProduct.mutate({ tenantId, label: newProduct.trim(), sortOrder: products?.length ?? 0 });
+                  }
+                }}
+              />
+              <Button
+                onClick={() => {
+                  if (newProduct.trim() && tenantId) {
+                    addProduct.mutate({ tenantId, label: newProduct.trim(), sortOrder: products?.length ?? 0 });
+                  }
+                }}
+                disabled={addProduct.isPending || !newProduct.trim()}
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" /> Add
+              </Button>
+            </div>
+
+            {/* Product list */}
+            {productsLoading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : !products || products.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Package className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                <p>No products added yet. Add your first product above.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {products.map((product, idx) => (
+                  <div key={product.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-opacity ${!product.isActive ? "opacity-50" : ""}`}>
+                    <GripVertical className="w-4 h-4 text-muted-foreground" />
+                    <span className="flex-1 font-medium text-sm">{product.label}</span>
+                    <Badge variant="outline" className="text-xs">#{idx + 1}</Badge>
+                    <Switch
+                      checked={product.isActive}
+                      onCheckedChange={v => updateProduct.mutate({ id: product.id, isActive: v })}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-8 h-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => deleteProduct.mutate({ id: product.id })}
+                      disabled={deleteProduct.isPending}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </AdminLayout>
+  );
+}
+

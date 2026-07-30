@@ -56,3 +56,32 @@
 - [x] Update main.tsx to redirect to /login on UNAUTHORIZED errors
 - [x] Seed jimmy@aibizstrategist.com as admin with hashed password
 - [x] Update tests for new auth system
+
+## Multi-Tenant SaaS Architecture
+- [x] Add tenants, tenant_products, webhook_logs tables; add tenantId to users and tickets
+- [x] Seed second super admin: jimmy@onetouch.media (password: !99Rykalyn)
+- [x] Tenant tRPC router: list, getById, create, update, toggleActive, delete, product CRUD, webhookLogs, testWebhook, getBySlug
+- [x] GHL webhook engine (server/ghlWebhook.ts): fires on ticket.submitted, ticket.status_changed, ticket.assigned
+- [x] All ticket/staff/reports routers scoped to tenantId
+- [x] Super admin panel: /superadmin overview, /superadmin/tenants list, /superadmin/tenants/new create, /superadmin/tenants/:id detail
+- [x] TenantDetail with 4 tabs: Settings, GHL Integration (webhook URL, API key, event toggles, test button, payload reference), Product Dropdown, Webhook Logs
+- [x] Super Admin link in AdminLayout sidebar (visible to admin users with no tenantId)
+- [x] Landing page updated to $149/month with AIA SupportDesk branding
+
+## Phase 6 — Per-Tenant Portal
+- [x] SubmitTicket: dynamic product loading via trpc.tickets.getProducts when tenantId param provided; falls back to GoHighLevel/Amply for tenantId=0
+- [x] tenants.getMyTenant procedure: tenant admins can read their own tenant info
+- [x] tenants.updateMyTenant procedure: tenant admins can update company name and logo
+- [x] /admin/settings page: tenant branding (name, logo) + product dropdown editor for tenant admins
+- [x] AdminLayout: Settings nav item visible to tenant admins (role=admin with tenantId)
+
+## Pending / Future Work
+- [ ] Fill in DEMO_CALENDAR_URL and STRIPE_PAYMENT_URL constants in client/src/pages/Home.tsx
+- [ ] Stripe paywall ($149/mo subscription before registration)
+- [ ] Path-based tenant routing (/t/:slug/) for demo before domain connection
+- [ ] True subdomain routing once aia-supportdesk.com is connected
+- [ ] Self-service tenant registration flow
+- [ ] Email notifications via GHL
+- [ ] Customer reply to ticket feature
+- [ ] Ticket search in admin panel
+- [ ] Activity log per ticket

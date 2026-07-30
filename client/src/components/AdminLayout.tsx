@@ -9,7 +9,9 @@ import {
   LogOut,
   Ticket,
   Users,
+  Shield,
 } from "lucide-react";
+import { Settings } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -18,6 +20,11 @@ const NAV_ITEMS = [
   { href: "/admin/tickets", label: "Tickets", icon: Ticket },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/staff", label: "Staff", icon: Users },
+];
+
+// Settings nav item shown only to tenant admins
+const TENANT_ADMIN_NAV = [
+  { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
 interface Props {
@@ -114,6 +121,23 @@ export default function AdminLayout({ children, title }: Props) {
               </Link>
             );
           })}
+          {user?.role === "admin" && (user as any).tenantId && TENANT_ADMIN_NAV.map((item) => {
+            const isActive = location.startsWith(item.href);
+            return (
+              <Link key={item.href} href={item.href}>
+                <div
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <item.icon className="w-4 h-4 flex-shrink-0" />
+                  {item.label}
+                </div>
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-border/50">
@@ -124,6 +148,14 @@ export default function AdminLayout({ children, title }: Props) {
               {user?.role}
             </span>
           </div>
+          {user?.role === "admin" && !(user as any).tenantId && (
+            <Link href="/superadmin">
+              <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-violet-600 hover:bg-violet-50 transition-colors cursor-pointer mb-1">
+                <Shield className="w-4 h-4" />
+                Super Admin
+              </div>
+            </Link>
+          )}
           <button
             onClick={() => logoutMutation.mutate()}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

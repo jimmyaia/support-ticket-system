@@ -15,6 +15,12 @@ import AdminTickets from "./pages/admin/Tickets";
 import AdminTicketDetail from "./pages/admin/TicketDetail";
 import AdminReports from "./pages/admin/Reports";
 import AdminStaff from "./pages/admin/Staff";
+import TenantSettings from "./pages/admin/TenantSettings";
+import SuperAdminLayout from "./components/SuperAdminLayout";
+import SuperAdminOverview from "./pages/superadmin/Overview";
+import TenantList from "./pages/superadmin/TenantList";
+import CreateTenant from "./pages/superadmin/CreateTenant";
+import TenantDetail from "./pages/superadmin/TenantDetail";
 
 function Router() {
   return (
@@ -33,6 +39,21 @@ function Router() {
       <Route path="/admin/tickets/:id" component={AdminTicketDetail} />
       <Route path="/admin/reports" component={AdminReports} />
       <Route path="/admin/staff" component={AdminStaff} />
+      <Route path="/admin/settings" component={TenantSettings} />
+
+      {/* Super Admin routes */}
+      <Route path="/superadmin">
+        {() => <SuperAdminLayout><SuperAdminOverview /></SuperAdminLayout>}
+      </Route>
+      <Route path="/superadmin/tenants">
+        {() => <SuperAdminLayout><TenantList /></SuperAdminLayout>}
+      </Route>
+      <Route path="/superadmin/tenants/new">
+        {() => <SuperAdminLayout><CreateTenant /></SuperAdminLayout>}
+      </Route>
+      <Route path="/superadmin/tenants/:id">
+        {() => <SuperAdminLayout><TenantDetail /></SuperAdminLayout>}
+      </Route>
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

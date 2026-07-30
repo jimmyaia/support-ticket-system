@@ -1,6 +1,20 @@
 import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertTicket, InsertTicketNote, tickets, ticketNotes, ticketAttachments, users, User } from "../drizzle/schema";
+import {
+  InsertTicket,
+  InsertTicketNote,
+  InsertTenant,
+  InsertTenantProduct,
+  tickets,
+  ticketNotes,
+  ticketAttachments,
+  tenants,
+  tenantProducts,
+  webhookLogs,
+  users,
+  User,
+  Tenant,
+} from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -32,7 +46,13 @@ export async function getUserById(id: number): Promise<User | undefined> {
   return result[0];
 }
 
-export async function createUser(data: { name: string; email: string; passwordHash: string; role?: "user" | "admin" | "staff" }): Promise<User> {
+export async function createUser(data: {
+  name: string;
+  email: string;
+  passwordHash: string;
+  role?: "user" | "admin" | "staff";
+  tenantId?: number;
+}): Promise<User> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(users).values({
@@ -40,6 +60,7 @@ export async function createUser(data: { name: string; email: string; passwordHa
     email: data.email,
     passwordHash: data.passwordHash,
     role: data.role ?? "user",
+    tenantId: data.tenantId ?? null,
     loginMethod: "email",
     lastSignedIn: new Date(),
   });
@@ -54,14 +75,20 @@ export async function updateLastSignedIn(userId: number): Promise<void> {
   await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
 }
 
-export async function getAllStaff() {
+export async function getAllStaff(tenantId?: number) {
   const db = await getDb();
   if (!db) return [];
-  return db
-    .select()
-    .from(users)
-    .where(sql`${users.role} IN ('admin', 'staff')`)
-    .orderBy(asc(users.name));
+  const conditions: any[] = [sql`${users.role} IN ('admin', 'staff')`];
+  if (tenantId !== undefined) {
+    conditions.push(eq(users.tenantId, tenantId));
+  }
+  return db.select().from(users).where(and(...conditions)).orderBy(asc(users.name));
+}
+
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).orderBy(asc(users.name));
 }
 
 export async function updateUserRole(userId: number, role: "user" | "admin" | "staff") {
@@ -70,7 +97,148 @@ export async function updateUserRole(userId: number, role: "user" | "admin" | "s
   await db.update(users).set({ role }).where(eq(users.id, userId));
 }
 
-// ─── Tickets ──────────────────────────────────────────────────────────────────
+export async function updateUserTenant(userId: number, tenantId: number | null) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ tenantId: tenantId ?? undefined } as any).where(eq(users.id, userId));
+}
+
+// ─── Tenants ──────────────────────────────────────────────────────────────────
+
+export async function createTenant(data: InsertTenant): Promise<Tenant> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(tenants).values(data);
+  const result = await db.select().from(tenants).where(eq(tenants.slug, data.slug)).limit(1);
+  if (!result[0]) throw new Error("Failed to create tenant");
+  return result[0];
+}
+
+export async function listTenants() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tenants).orderBy(asc(tenants.name));
+}
+
+export async function getTenantById(id: number): Promise<Tenant | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(tenants).where(eq(tenants.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getTenantBySlug(slug: string): Promise<Tenant | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(tenants).where(eq(tenants.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function updateTenant(id: number, data: Partial<InsertTenant>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tenants).set(data as any).where(eq(tenants.id, id));
+}
+
+export async function deleteTenant(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(tenants).where(eq(tenants.id, id));
+}
+
+export async function getTenantStats(id: number) {
+  const db = await getDb();
+  if (!db) return { ticketCount: 0, staffCount: 0, lastActivity: null };
+  const [ticketRows, staffRows] = await Promise.all([
+    db.select().from(tickets).where(eq(tickets.tenantId, id)),
+    db.select().from(users).where(and(eq(users.tenantId, id), sql`${users.role} IN ('admin','staff')`)),
+  ]);
+  const lastTicket = ticketRows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0];
+  return {
+    ticketCount: ticketRows.length,
+    staffCount: staffRows.length,
+    lastActivity: lastTicket?.updatedAt ?? null,
+  };
+}
+
+// ─── Tenant Products ──────────────────────────────────────────────────────────
+
+export async function getTenantProducts(tenantId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(tenantProducts)
+    .where(and(eq(tenantProducts.tenantId, tenantId), eq(tenantProducts.isActive, true)))
+    .orderBy(asc(tenantProducts.sortOrder), asc(tenantProducts.label));
+}
+
+export async function getAllTenantProducts(tenantId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(tenantProducts)
+    .where(eq(tenantProducts.tenantId, tenantId))
+    .orderBy(asc(tenantProducts.sortOrder), asc(tenantProducts.label));
+}
+
+export async function addTenantProduct(data: InsertTenantProduct) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(tenantProducts).values(data);
+}
+
+export async function updateTenantProduct(id: number, data: Partial<InsertTenantProduct>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(tenantProducts).set(data as any).where(eq(tenantProducts.id, id));
+}
+
+export async function deleteTenantProduct(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(tenantProducts).where(eq(tenantProducts.id, id));
+}
+
+// ─── Webhook Logs ─────────────────────────────────────────────────────────────
+
+export async function logWebhook(data: {
+  tenantId: number;
+  ticketId?: number;
+  event: string;
+  webhookUrl: string;
+  payload: string;
+  statusCode?: number;
+  success: boolean;
+  errorMessage?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(webhookLogs).values({
+    tenantId: data.tenantId,
+    ticketId: data.ticketId ?? null,
+    event: data.event,
+    webhookUrl: data.webhookUrl,
+    payload: data.payload,
+    statusCode: data.statusCode ?? null,
+    success: data.success,
+    errorMessage: data.errorMessage ?? null,
+  } as any);
+}
+
+export async function getWebhookLogs(tenantId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(webhookLogs)
+    .where(eq(webhookLogs.tenantId, tenantId))
+    .orderBy(desc(webhookLogs.createdAt))
+    .limit(limit);
+}
+
+// ─── Tickets (tenant-scoped) ──────────────────────────────────────────────────
 
 function generateTicketNumber(): string {
   const prefix = "TKT";
@@ -89,8 +257,10 @@ export async function createTicket(data: Omit<InsertTicket, "ticketNumber">) {
 }
 
 export type TicketFilters = {
+  tenantId?: number;
   status?: string;
   priority?: string;
+  product?: string;
   assigneeId?: number | null;
   search?: string;
   sortBy?: "createdAt" | "updatedAt" | "priority" | "status";
@@ -101,9 +271,11 @@ export async function listTickets(filters: TicketFilters = {}) {
   const db = await getDb();
   if (!db) return [];
 
-  const conditions = [];
+  const conditions: any[] = [];
+  if (filters.tenantId !== undefined) conditions.push(eq(tickets.tenantId, filters.tenantId));
   if (filters.status) conditions.push(eq(tickets.status, filters.status as any));
   if (filters.priority) conditions.push(eq(tickets.priority, filters.priority as any));
+  if (filters.product) conditions.push(eq(tickets.product, filters.product));
   if (filters.assigneeId !== undefined) {
     if (filters.assigneeId === null) {
       conditions.push(sql`${tickets.assigneeId} IS NULL`);
@@ -124,17 +296,21 @@ export async function listTickets(filters: TicketFilters = {}) {
   return query;
 }
 
-export async function getTicketByNumber(ticketNumber: string) {
+export async function getTicketByNumber(ticketNumber: string, tenantId?: number) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(tickets).where(eq(tickets.ticketNumber, ticketNumber)).limit(1);
+  const conditions: any[] = [eq(tickets.ticketNumber, ticketNumber.trim().toUpperCase())];
+  if (tenantId !== undefined) conditions.push(eq(tickets.tenantId, tenantId));
+  const result = await db.select().from(tickets).where(and(...conditions)).limit(1);
   return result[0];
 }
 
-export async function getTicketById(id: number) {
+export async function getTicketById(id: number, tenantId?: number) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
+  const conditions: any[] = [eq(tickets.id, id)];
+  if (tenantId !== undefined) conditions.push(eq(tickets.tenantId, tenantId));
+  const result = await db.select().from(tickets).where(and(...conditions)).limit(1);
   return result[0];
 }
 
@@ -199,19 +375,19 @@ export async function getTicketAttachments(ticketId: number) {
     .orderBy(asc(ticketAttachments.createdAt));
 }
 
-// ─── Reporting ────────────────────────────────────────────────────────────────
+// ─── Reporting (tenant-scoped) ────────────────────────────────────────────────
 
-export async function getMonthlyStats(year: number, month: number) {
+export async function getMonthlyStats(year: number, month: number, tenantId?: number) {
   const db = await getDb();
   if (!db) return null;
 
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 1);
 
-  const allTickets = await db
-    .select()
-    .from(tickets)
-    .where(and(gte(tickets.createdAt, startDate), lte(tickets.createdAt, endDate)));
+  const conditions: any[] = [gte(tickets.createdAt, startDate), lte(tickets.createdAt, endDate)];
+  if (tenantId !== undefined) conditions.push(eq(tickets.tenantId, tenantId));
+
+  const allTickets = await db.select().from(tickets).where(and(...conditions));
 
   const total = allTickets.length;
   const byStatus = { new: 0, in_progress: 0, stuck: 0, completed: 0, closed: 0 };
@@ -233,7 +409,7 @@ export async function getMonthlyStats(year: number, month: number) {
   return { total, byStatus, completionRate, avgResolveHours, resolvedCount };
 }
 
-export async function getMonthlyVolume(months: number = 6) {
+export async function getMonthlyVolume(months: number = 6, tenantId?: number) {
   const db = await getDb();
   if (!db) return [];
 
@@ -247,10 +423,10 @@ export async function getMonthlyVolume(months: number = 6) {
     const startDate = new Date(adjustedDate.getFullYear(), adjustedDate.getMonth(), 1);
     const endDate = new Date(adjustedDate.getFullYear(), adjustedDate.getMonth() + 1, 1);
 
-    const monthTickets = await db
-      .select()
-      .from(tickets)
-      .where(and(gte(tickets.createdAt, startDate), lte(tickets.createdAt, endDate)));
+    const conditions: any[] = [gte(tickets.createdAt, startDate), lte(tickets.createdAt, endDate)];
+    if (tenantId !== undefined) conditions.push(eq(tickets.tenantId, tenantId));
+
+    const monthTickets = await db.select().from(tickets).where(and(...conditions));
 
     const resolved = monthTickets.filter(
       (t) => t.status === "completed" || t.status === "closed"

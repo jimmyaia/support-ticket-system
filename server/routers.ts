@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { ticketsRouter } from "./routers/tickets";
 import { staffRouter } from "./routers/staff";
 import { reportsRouter } from "./routers/reports";
+import { tenantsRouter } from "./routers/tenants";
 import { z } from "zod";
 import * as db from "./db";
 import { hashPassword, verifyPassword, createSessionToken } from "./_core/authService";
@@ -62,6 +63,7 @@ export const appRouter = router({
   tickets: ticketsRouter,
   staff: staffRouter,
   reports: reportsRouter,
+  tenants: tenantsRouter,
 });
 
 export type AppRouter = typeof appRouter;

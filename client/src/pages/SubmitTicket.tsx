@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ const schema = z.object({
   name: z.string().min(1, "Name is required").max(255),
   email: z.string().email("Please enter a valid email").max(320),
   subject: z.string().min(1, "Subject is required").max(500),
-  product: z.enum(["go_highlevel", "amply"]),
+  product: z.string().min(1, "Please select a product"),
   description: z.string().min(10, "Please provide at least 10 characters").max(5000),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   loomUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
@@ -26,20 +26,38 @@ type FormData = z.infer<typeof schema>;
 
 export default function SubmitTicket() {
   const [, navigate] = useLocation();
-  const [imageUrl, setImageUrl] = useState<string>("");
+  const search = useSearch();
+  const tenantId = parseInt(new URLSearchParams(search).get("tenantId") ?? "0") || 0;
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
+  // Load tenant products dynamically when tenantId is provided
+  const { data: tenantProducts, isLoading: productsLoading } = trpc.tickets.getProducts.useQuery(
+    { tenantId },
+    { enabled: tenantId > 0 }
+  );
+
+  // Default products for owner's workspace (tenantId=0)
+  const defaultProducts = useMemo(() => [
+    { id: -1, label: "GoHighLevel", value: "GoHighLevel", isActive: true },
+    { id: -2, label: "Amply", value: "Amply", isActive: true },
+  ], []);
+
+  const productOptions = tenantId > 0
+    ? (tenantProducts ?? []).filter(p => p.isActive).map(p => ({ id: p.id, label: p.label, value: p.label, isActive: p.isActive }))
+    : defaultProducts;
+
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { priority: "medium", product: "go_highlevel" },
+    defaultValues: { priority: "medium" },
   });
 
   const submitMutation = trpc.tickets.submit.useMutation({
     onSuccess: (data) => {
       navigate(`/ticket-submitted/${data.ticketNumber}`);
     },
-    onError: (err) => {
+    onError: () => {
       toast.error("Failed to submit ticket. Please try again.");
     },
   });
@@ -52,9 +70,6 @@ export default function SubmitTicket() {
       return;
     }
     setImageFile(file);
-    // Create a local preview URL
-    const localUrl = URL.createObjectURL(file);
-    setImageUrl(localUrl);
   };
 
   const onSubmit = async (data: FormData) => {
@@ -89,6 +104,7 @@ export default function SubmitTicket() {
       priority: data.priority,
       imageUrl: finalImageUrl,
       loomUrl: data.loomUrl || undefined,
+      tenantId,
     });
   };
 
@@ -152,15 +168,17 @@ export default function SubmitTicket() {
             </div>
             <div className="space-y-1.5">
               <Label>Which product are you having trouble with? <span className="text-destructive">*</span></Label>
-              <Select defaultValue="go_highlevel" onValueChange={(v) => setValue("product", v as any)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a product..." />
+              <Select onValueChange={(v) => setValue("product", v)} disabled={productsLoading && tenantId > 0}>
+                <SelectTrigger className={errors.product ? "border-destructive" : ""}>
+                  <SelectValue placeholder={productsLoading ? "Loading products..." : "Select a product..."} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="go_highlevel">GoHighLevel</SelectItem>
-                  <SelectItem value="amply">Amply</SelectItem>
+                  {productOptions.map((p) => (
+                    <SelectItem key={p.id} value={p.value}>{p.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {errors.product && <p className="text-xs text-destructive">{errors.product.message}</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="description">Description <span className="text-destructive">*</span></Label>
