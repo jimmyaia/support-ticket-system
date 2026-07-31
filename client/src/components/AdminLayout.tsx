@@ -14,7 +14,6 @@ import {
 import { Settings } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { AlertTriangle, X } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -44,19 +43,6 @@ export default function AdminLayout({ children, title }: Props) {
       toast.success("Logged out successfully");
       window.location.href = "/login";
     },
-  });
-
-  const { data: impersonationStatus } = trpc.tenants.impersonationStatus.useQuery(undefined, {
-    enabled: isAuthenticated,
-    refetchOnWindowFocus: false,
-  });
-
-  const exitImpersonation = trpc.tenants.exitImpersonation.useMutation({
-    onSuccess: () => {
-      toast.success("Returned to Super Admin");
-      window.location.href = "/superadmin";
-    },
-    onError: (e) => toast.error(e.message),
   });
 
   if (loading) {
@@ -182,28 +168,6 @@ export default function AdminLayout({ children, title }: Props) {
 
       {/* Main content */}
       <main className="flex-1 min-w-0 flex flex-col">
-        {/* Impersonation banner */}
-        {impersonationStatus?.isImpersonating && (
-          <div className="bg-amber-500 text-white px-6 py-2.5 flex items-center justify-between text-sm font-medium shrink-0">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>
-                Viewing as <strong>{impersonationStatus.tenantName ?? "a tenant"}</strong>
-                {" "}({impersonationStatus.impersonatedEmail}) — you are in impersonation mode.
-              </span>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-white text-amber-700 border-white hover:bg-amber-50 gap-1.5 h-7 text-xs ml-4 shrink-0"
-              onClick={() => exitImpersonation.mutate()}
-              disabled={exitImpersonation.isPending}
-            >
-              <X className="w-3 h-3" />
-              Exit — Return to Super Admin
-            </Button>
-          </div>
-        )}
         {title && (
           <header className="bg-white border-b border-border/50 px-8 py-5">
             <h1 className="font-display text-xl font-medium text-foreground">{title}</h1>

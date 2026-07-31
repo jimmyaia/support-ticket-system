@@ -54,9 +54,6 @@ function Router() {
       <Route path="/superadmin/tenants/:id">
         {() => <SuperAdminLayout><TenantDetail /></SuperAdminLayout>}
       </Route>
-      <Route path="/superadmin/search">
-        {() => <SuperAdminLayout><GlobalSearch /></SuperAdminLayout>}
-      </Route>
 
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
@@ -78,4 +75,3 @@ function App() {
 }
 
 export default App;
-import GlobalSearch from "./pages/superadmin/GlobalSearch";

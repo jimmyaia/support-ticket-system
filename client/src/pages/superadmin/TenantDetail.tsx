@@ -18,7 +18,6 @@ import {
   GripVertical, CheckCircle2, XCircle, Clock, Send, ExternalLink,
   AlertTriangle, StickyNote, Settings
 } from "lucide-react";
-import { Eye } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
 export default function TenantDetail() {
@@ -51,14 +50,6 @@ export default function TenantDetail() {
 
   const testWebhook = trpc.tenants.testWebhook.useMutation({
     onSuccess: (r) => r.success ? toast.success("Webhook test successful! ✓") : toast.error(`Webhook test failed: ${r.statusCode ?? r.error}`),
-    onError: (e) => toast.error(e.message),
-  });
-
-  const startImpersonation = trpc.tenants.startImpersonation.useMutation({
-    onSuccess: (r) => {
-      toast.success(`Now viewing as ${r.tenantName} — redirecting to admin panel`);
-      setTimeout(() => { window.location.href = "/admin"; }, 900);
-    },
     onError: (e) => toast.error(e.message),
   });
 
@@ -123,18 +114,6 @@ export default function TenantDetail() {
           <Badge variant={tenant.isActive ? "default" : "secondary"} className="text-sm px-3 py-1">
             {tenant.isActive ? "Active" : "Suspended"}
           </Badge>
-          {tenant.isActive && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 ml-3"
-              onClick={() => startImpersonation.mutate({ tenantId })}
-              disabled={startImpersonation.isPending}
-            >
-              <Eye className="w-4 h-4" />
-              {startImpersonation.isPending ? "Switching..." : "View as Tenant"}
-            </Button>
-          )}
         </div>
       </div>
 
@@ -412,3 +391,4 @@ export default function TenantDetail() {
     </div>
   );
 }
+
