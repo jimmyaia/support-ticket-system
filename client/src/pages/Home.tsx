@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 // ── CONFIG ─────────────────────────────────────────────────────────────────────
-const DEMO_CALENDAR_URL = "https://calendly.com/YOUR_LINK";
+const DEMO_CALENDAR_URL = "https://api.leadconnectorhq.com/widget/bookings/jimmys-master-calendar";
 const STRIPE_PAYMENT_URL = "https://buy.stripe.com/YOUR_LINK";
 // ───────────────────────────────────────────────────────────────────────────────
 
