@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import React from "react";
 import {
   ArrowRight,
   CheckCircle,
@@ -141,18 +142,18 @@ export default function Home() {
           {/* Channel equation */}
           <div className="flex flex-wrap items-center justify-center gap-2 mb-12">
             {[
-              { icon: Mic, label: "Voice Bot", color: "from-violet-500/15 to-violet-500/5 border-violet-500/20 text-violet-300" },
-              { icon: MessageCircle, label: "SMS & WhatsApp Bot", color: "from-emerald-500/15 to-emerald-500/5 border-emerald-500/20 text-emerald-300" },
-              { icon: FileText, label: "Web Form", color: "from-blue-500/15 to-blue-500/5 border-blue-500/20 text-blue-300" },
-            ].map((item, i) => (
-              <>
-                <div key={item.label} className={`flex items-center gap-2 px-4 py-2 rounded-full border bg-gradient-to-br ${item.color} text-sm font-medium backdrop-blur-sm`}>
-                  <item.icon className="w-3.5 h-3.5" />
-                  {item.label}
-                </div>
-                {i < 2 && <span key={`plus-${i}`} className="text-white/20 text-base font-light">+</span>}
-              </>
-            ))}
+            { icon: Mic, label: "Voice Bot", color: "from-violet-500/15 to-violet-500/5 border-violet-500/20 text-violet-300" },
+            { icon: MessageCircle, label: "SMS & WhatsApp Bot", color: "from-emerald-500/15 to-emerald-500/5 border-emerald-500/20 text-emerald-300" },
+            { icon: FileText, label: "Web Form", color: "from-blue-500/15 to-blue-500/5 border-blue-500/20 text-blue-300" },
+          ].map((item, i) => (
+            <React.Fragment key={item.label}>
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border bg-gradient-to-br ${item.color} text-sm font-medium backdrop-blur-sm`}>
+                <item.icon className="w-3.5 h-3.5" />
+                {item.label}
+              </div>
+              {i < 2 && <span className="text-white/20 text-base font-light">+</span>}
+            </React.Fragment>
+          ))}
             <span className="text-white/20 text-base font-light">=</span>
             <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.06] text-white text-sm font-semibold">
               <Zap className="w-3.5 h-3.5 text-yellow-400" />
