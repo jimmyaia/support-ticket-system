@@ -96,7 +96,7 @@ export default function CreateTenant() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Portal URL: <span className="font-medium text-foreground">{window.location.origin}/submit?tenantId=[assigned after creation]</span>
+                  Portal URL: <span className="font-medium text-foreground">https://aia-supportdesk.com/submit?tenantId=[assigned after creation]</span>
                 </p>
                 {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
               </div>

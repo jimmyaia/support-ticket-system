@@ -85,6 +85,6 @@ export async function fireWebhook(
 export function buildStatusPageUrl(tenantSlug: string, ticketNumber: string): string {
   // In production this becomes https://{slug}.aia-supportdesk.com/status/{ticketNumber}
   // For now we use the path-based URL
-  const base = process.env.APP_BASE_URL ?? "https://supporttick-lfdoyryy.manus.space";
+  const base = process.env.APP_BASE_URL ?? "https://aia-supportdesk.com";
   return `${base}/t/${tenantSlug}/status/${ticketNumber}`;
 }
