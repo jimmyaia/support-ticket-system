@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useRoute, Link } from "wouter";
-import { useForm } from "react-hook-form";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,12 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-  import {
+import {
   ArrowLeft, Building2, Webhook, Package, Activity, Plus, Trash2,
-  GripVertical, CheckCircle2, XCircle, Clock, Send, ExternalLink,
-  AlertTriangle, StickyNote, Settings, Eye
+  GripVertical, CheckCircle2, XCircle, Send,
+  StickyNote, Settings, Eye
 } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 
 export default function TenantDetail() {
   const [, params] = useRoute("/superadmin/tenants/:id");

@@ -2,21 +2,16 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
   import {
   Building2,
   LayoutDashboard,
   LogOut,
   Shield,
-  ChevronRight,
   Home,
   Search,
   Users,
 } from "lucide-react";
-import { toast } from "sonner";
-import { useLocation as useWouterLocation } from "wouter";
 
 interface SuperAdminLayoutProps {
   children: React.ReactNode;

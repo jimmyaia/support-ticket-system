@@ -20,7 +20,6 @@ export default function AdminTicketDetail({ params }: Props) {
 
   const { data, isLoading } = trpc.tickets.getById.useQuery({ id: ticketId });
   const { data: staffList } = trpc.staff.list.useQuery();
-  const { data: currentUser } = trpc.auth.me.useQuery();
 
   const updateStatusMutation = trpc.tickets.updateStatus.useMutation({
     onSuccess: () => {
@@ -77,8 +76,7 @@ export default function AdminTicketDetail({ params }: Props) {
     );
   }
 
-  const { ticket, notes, attachments } = data;
-  const assignee = staffList?.find((s) => s.id === ticket.assigneeId);
+  const { ticket, notes } = data;
 
   return (
     <AdminLayout>

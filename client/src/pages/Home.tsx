@@ -5,7 +5,6 @@ import {
   CheckCircle,
   HeadphonesIcon,
   MessageSquare,
-  Smartphone,
   BarChart3,
   Users,
   Zap,

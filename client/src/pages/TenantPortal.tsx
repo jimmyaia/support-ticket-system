@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Building2, Send, AlertTriangle, CheckCircle2, Search } from "lucide-react";
+import { Building2, Send, AlertTriangle, Search } from "lucide-react";
 import { Link } from "wouter";
 
 const schema = z.object({
@@ -40,7 +40,7 @@ export default function TenantPortal({ slug }: Props) {
     { staleTime: 60_000 }
   );
 
-  const { data: products, isLoading: productsLoading } = trpc.tickets.getProductsBySlug.useQuery(
+  const { data: products } = trpc.tickets.getProductsBySlug.useQuery(
     { slug },
     { staleTime: 60_000 }
   );

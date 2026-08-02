@@ -3,7 +3,6 @@ import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { StatusBadge, PriorityBadge } from "@/components/TicketBadges";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, ChevronUp, Loader2, Search, TicketIcon } from "lucide-react";

@@ -3,7 +3,6 @@
  * e.g. onetouch.aia-supportdesk.com → returns "onetouch"
  * Returns null on the root domain or localhost.
  */
-const ROOT_DOMAINS = ["aia-supportdesk.com", "localhost", "manus.computer", "manus.space"];
 
 export function useSubdomain(): string | null {
   const hostname = window.location.hostname;

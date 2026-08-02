@@ -14,7 +14,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Building2, Package, Plus, Trash2, GripVertical, Settings, KeyRound } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 
 const passwordSchema = z.object({
   currentPassword: z.string().optional(),

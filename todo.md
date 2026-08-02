@@ -110,6 +110,7 @@
 - [x] TenantBranding component in AdminLayout header (company logo + name for tenant admins)
 - [x] Public portal branding: SubmitTicket and CheckStatus show "Welcome to [Company Name] Support" via getTenantInfo tRPC procedure
 - [x] Global Staff management page in Super Admin (/superadmin/staff)
+- [x] Third audit pass: fixed TenantPortal.tsx syntax error (stray import lines after closing brace), removed unused imports across 11 files (Smartphone from Home.tsx, Separator from TenantSettings.tsx, currentUser/attachments/assignee from TicketDetail.tsx, Button from Tickets.tsx, useState/Separator/Globe/Key/Lock from CreateTenant.tsx, CardHeader/CardTitle/formatDistanceToNow from Overview.tsx, useForm/Clock/ExternalLink/AlertTriangle/format from TenantDetail.tsx, CardHeader/CardTitle from TenantList.tsx, ROOT_DOMAINS from useSubdomain.ts, LOCAL_HOSTS/isIpAddress from cookies.ts). TypeScript: 0 errors | Tests: 14/14 passing
 
 ## Subdomain-Based Multi-Tenant Routing
 - [x] Add getTenantBySlug public tRPC procedure (returns name, logoUrl, id, isActive)

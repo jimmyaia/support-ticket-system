@@ -1,11 +1,10 @@
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building2, Plus, TicketCheck, Users, Activity, ChevronRight, TrendingUp } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
 
 export default function SuperAdminOverview() {
   const { data: tenants, isLoading } = trpc.tenants.list.useQuery();
