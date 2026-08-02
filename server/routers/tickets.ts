@@ -225,4 +225,14 @@ export const ticketsRouter = router({
     .query(async ({ input }) => {
       return getTenantProducts(input.tenantId);
     }),
+
+  // Public: get basic tenant branding (name + logo) for submit/status pages
+  getTenantInfo: publicProcedure
+    .input(z.object({ tenantId: z.number().int() }))
+    .query(async ({ input }) => {
+      if (input.tenantId <= 0) return null;
+      const tenant = await getTenantById(input.tenantId);
+      if (!tenant || !tenant.isActive) return null;
+      return { name: tenant.name, logoUrl: tenant.logoUrl ?? null };
+    }),
 });

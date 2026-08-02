@@ -22,13 +22,20 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
   urgent: { label: "Urgent", color: "text-red-600" },
 };
 
-export default function CheckStatus() {
+  export default function CheckStatus() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const initialTicket = params.get("ticket") || "";
+  const tenantId = parseInt(params.get("tenantId") ?? "0") || 0;
 
   const [ticketNumber, setTicketNumber] = useState(initialTicket);
   const [queryTicket, setQueryTicket] = useState(initialTicket);
+
+  // Fetch tenant branding for the nav header
+  const { data: tenantInfo } = trpc.tickets.getTenantInfo.useQuery(
+    { tenantId },
+    { enabled: tenantId > 0, staleTime: 60_000 }
+  );
 
   const { data, isLoading, error, refetch } = trpc.tickets.lookup.useQuery(
     { ticketNumber: queryTicket },
@@ -53,13 +60,19 @@ export default function CheckStatus() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <HeadphonesIcon className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold text-foreground tracking-tight">SupportDesk</span>
+              {tenantInfo?.logoUrl ? (
+                <img src={tenantInfo.logoUrl} alt={tenantInfo.name} className="h-8 w-8 rounded-lg object-contain border border-border/40 bg-white p-0.5" />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                  <HeadphonesIcon className="w-4 h-4 text-primary-foreground" />
+                </div>
+              )}
+              <span className="font-semibold text-foreground tracking-tight">
+                {tenantInfo?.name ? `Welcome to ${tenantInfo.name} Support` : "SupportDesk"}
+              </span>
             </div>
           </Link>
-          <Link href="/submit">
+          <Link href={tenantId > 0 ? `/submit?tenantId=${tenantId}` : "/submit"}>
             <Button size="sm" className="gap-1.5">Submit Ticket</Button>
           </Link>
         </div>
@@ -147,4 +160,3 @@ export default function CheckStatus() {
     </div>
   );
 }
-

@@ -24,13 +24,19 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-export default function SubmitTicket() {
+  export default function SubmitTicket() {
   const [, navigate] = useLocation();
   const search = useSearch();
   const tenantId = parseInt(new URLSearchParams(search).get("tenantId") ?? "0") || 0;
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Fetch tenant branding for the nav header
+  const { data: tenantInfo } = trpc.tickets.getTenantInfo.useQuery(
+    { tenantId },
+    { enabled: tenantId > 0, staleTime: 60_000 }
+  );
 
   // Load tenant products dynamically when tenantId is provided
   const { data: tenantProducts, isLoading: productsLoading } = trpc.tickets.getProducts.useQuery(
@@ -117,13 +123,19 @@ export default function SubmitTicket() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <HeadphonesIcon className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold text-foreground tracking-tight">SupportDesk</span>
+              {tenantInfo?.logoUrl ? (
+                <img src={tenantInfo.logoUrl} alt={tenantInfo.name} className="h-8 w-8 rounded-lg object-contain border border-border/40 bg-white p-0.5" />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                  <HeadphonesIcon className="w-4 h-4 text-primary-foreground" />
+                </div>
+              )}
+              <span className="font-semibold text-foreground tracking-tight">
+                {tenantInfo?.name ? `Welcome to ${tenantInfo.name} Support` : "SupportDesk"}
+              </span>
             </div>
           </Link>
-          <Link href="/check-status">
+          <Link href={tenantId > 0 ? `/check-status?tenantId=${tenantId}` : "/check-status"}>
             <Button variant="ghost" size="sm" className="text-muted-foreground">Check Status</Button>
           </Link>
         </div>
