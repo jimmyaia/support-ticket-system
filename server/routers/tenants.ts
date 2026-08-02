@@ -56,8 +56,14 @@ const tenantAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
     }),
 
   // Super admin: exit impersonation
-  exitImpersonation: superAdminProcedure
+  exitImpersonation: protectedProcedure
     .mutation(async ({ ctx }) => {
+      // During impersonation ctx.user is the tenant admin, not the real super admin.
+      // We must verify the real user (from the original session cookie) is a super admin.
+      const realUser = await getRealUser(ctx.req);
+      if (!realUser || realUser.role !== "admin" || realUser.tenantId !== null) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Super admin access required" });
+      }
       ctx.res.clearCookie(IMPERSONATE_COOKIE_NAME, { path: "/" });
       return { success: true };
     }),
