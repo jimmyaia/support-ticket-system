@@ -1,10 +1,11 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import {
+  import {
   createTenant,
   createUser,
   deleteTenant,
   getAllTenantProducts,
+  getAllStaff,
   getTenantById,
   getTenantBySlug,
   getTenantProducts,
@@ -16,9 +17,13 @@ import {
   listTenants,
   updateTenant,
   getUserByEmail,
+  listTickets,
+  getUserById,
 } from "../db";
-import { hashPassword } from "../_core/authService";
+import { hashPassword, createSessionToken, getRealUser } from "../_core/authService";
 import { protectedProcedure, router } from "../_core/trpc";
+import { IMPERSONATE_COOKIE_NAME } from "@shared/const";
+import { getSessionCookieOptions } from "../_core/cookies";
 
 // Only super-admins (role=admin, no tenantId) can manage tenants
 const superAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -36,7 +41,64 @@ const tenantAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
-export const tenantsRouter = router({
+  export const tenantsRouter = router({
+  // Super admin: start impersonating a tenant admin
+  startImpersonation: superAdminProcedure
+    .input(z.object({ tenantId: z.number().int() }))
+    .mutation(async ({ input, ctx }) => {
+      const tenant = await getTenantById(input.tenantId);
+      if (!tenant) throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      const allUsers = await getAllStaff(input.tenantId);
+      const tenantAdmin = allUsers.find(u => u.role === "admin");
+      if (!tenantAdmin) throw new TRPCError({ code: "NOT_FOUND", message: "No admin user found for this tenant" });
+      const impToken = await createSessionToken(tenantAdmin.id, tenantAdmin.email ?? "", tenantAdmin.role);
+      const cookieOpts = getSessionCookieOptions(ctx.req);
+      ctx.res.cookie(IMPERSONATE_COOKIE_NAME, impToken, { ...cookieOpts, maxAge: 60 * 60 * 1000 });
+      return { success: true, tenantName: tenant.name, adminEmail: tenantAdmin.email };
+    }),
+
+  // Super admin: exit impersonation
+  exitImpersonation: superAdminProcedure
+    .mutation(async ({ ctx }) => {
+      ctx.res.clearCookie(IMPERSONATE_COOKIE_NAME, { path: "/" });
+      return { success: true };
+    }),
+
+  // Any authenticated user: check impersonation status
+  impersonationStatus: protectedProcedure.query(async ({ ctx }) => {
+    const realUser = await getRealUser(ctx.req);
+    if (!realUser || realUser.role !== "admin" || realUser.tenantId !== null) {
+      return { isImpersonating: false };
+    }
+    const cookieHeader = ctx.req.headers.cookie;
+    if (!cookieHeader) return { isImpersonating: false };
+    const { parse } = await import("cookie");
+    const parsed = parse(cookieHeader);
+    if (!parsed[IMPERSONATE_COOKIE_NAME]) return { isImpersonating: false };
+    const tenantId = ctx.user.tenantId;
+    const tenant = tenantId ? await getTenantById(tenantId) : null;
+    return {
+      isImpersonating: true,
+      tenantName: tenant?.name ?? "Unknown Tenant",
+      tenantId: tenantId ?? null,
+      realAdminName: realUser.name,
+    };
+  }),
+
+  // Super admin: global ticket search across all tenants
+  searchTicketsGlobal: superAdminProcedure
+    .input(z.object({ search: z.string().min(1).max(200) }))
+    .query(async ({ input }) => {
+      const allTenants = await listTenants();
+      const allTickets = await listTickets({ search: input.search });
+      const tenantMap = new Map(allTenants.map(t => [t.id, t]));
+      return allTickets.map(t => ({
+        ...t,
+        tenantName: tenantMap.get(t.tenantId ?? 0)?.name ?? "Unknown",
+        tenantSlug: tenantMap.get(t.tenantId ?? 0)?.slug ?? "",
+      }));
+    }),
+
   // Tenant admin: get their own tenant info (for settings page and branding)
   getMyTenant: protectedProcedure.query(async ({ ctx }) => {
     if (!ctx.user.tenantId) return null;

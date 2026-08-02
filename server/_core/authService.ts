@@ -4,7 +4,7 @@ import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
 import * as db from "../db";
 import { ENV } from "./env";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, IMPERSONATE_COOKIE_NAME } from "@shared/const";
 import type { User } from "../../drizzle/schema";
 
 const SALT_ROUNDS = 12;
@@ -44,7 +44,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
   }
 }
 
-export async function authenticateRequest(req: Request): Promise<User | null> {
+  export async function authenticateRequest(req: Request): Promise<User | null> {
   // Read from cookie
   const cookieHeader = req.headers.cookie;
   let token: string | undefined;
@@ -67,6 +67,39 @@ export async function authenticateRequest(req: Request): Promise<User | null> {
   const session = await verifySessionToken(token);
   if (!session) return null;
 
+  const user = await db.getUserById(session.userId);
+  if (!user) return null;
+
+  // Check for impersonation cookie — only valid if the real user is a super admin
+  if (user.role === "admin" && user.tenantId === null) {
+    const cookieHeader2 = req.headers.cookie;
+    if (cookieHeader2) {
+      const parsed = parseCookieHeader(cookieHeader2);
+      const impToken = parsed[IMPERSONATE_COOKIE_NAME];
+      if (impToken) {
+        const impSession = await verifySessionToken(impToken);
+        if (impSession) {
+          const impUser = await db.getUserById(impSession.userId);
+          if (impUser) return impUser;
+        }
+      }
+    }
+  }
+
+  return user;
+}
+
+/** Returns the real super-admin user regardless of impersonation cookie */
+export async function getRealUser(req: Request): Promise<User | null> {
+  const cookieHeader = req.headers.cookie;
+  let token: string | undefined;
+  if (cookieHeader) {
+    const parsed = parseCookieHeader(cookieHeader);
+    token = parsed[COOKIE_NAME];
+  }
+  if (!token) return null;
+  const session = await verifySessionToken(token);
+  if (!session) return null;
   const user = await db.getUserById(session.userId);
   return user ?? null;
 }

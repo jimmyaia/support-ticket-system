@@ -13,10 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import {
+  import {
   ArrowLeft, Building2, Webhook, Package, Activity, Plus, Trash2,
   GripVertical, CheckCircle2, XCircle, Clock, Send, ExternalLink,
-  AlertTriangle, StickyNote, Settings
+  AlertTriangle, StickyNote, Settings, Eye
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 
@@ -66,6 +66,16 @@ export default function TenantDetail() {
     logoUrl?: string;
     internalNotes?: string;
   }>({});
+  const [slugValue, setSlugValue] = useState<string>("");
+  // currentSlug computed after tenant is available (see below)
+
+  const startImpersonation = trpc.tenants.startImpersonation.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Now viewing as ${data.tenantName}`);
+      window.location.href = "/admin";
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   if (isLoading) {
     return (
@@ -80,9 +90,11 @@ export default function TenantDetail() {
 
   const { tenant, products, webhookLogs } = data;
   const ghlConnected = !!tenant.ghlWebhookUrl;
+  const currentSlug = slugValue || tenant.slug;
 
   const handleSaveSettings = () => {
-    updateTenant.mutate({ id: tenantId, ...settingsForm });
+    const slugToSave = slugValue || tenant?.slug;
+    updateTenant.mutate({ id: tenantId, ...settingsForm, ...(slugToSave ? { slug: slugToSave } : {}) });
   };
 
   const handleSaveGhl = () => {
@@ -111,9 +123,19 @@ export default function TenantDetail() {
               <p className="text-muted-foreground text-sm">{tenant.slug}.aia-supportdesk.com</p>
             </div>
           </div>
-          <Badge variant={tenant.isActive ? "default" : "secondary"} className="text-sm px-3 py-1">
-            {tenant.isActive ? "Active" : "Suspended"}
-          </Badge>
+            <Badge variant={tenant.isActive ? "default" : "secondary"} className="text-sm px-3 py-1">
+              {tenant.isActive ? "Active" : "Suspended"}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 ml-2"
+              onClick={() => startImpersonation.mutate({ tenantId })}
+              disabled={startImpersonation.isPending}
+            >
+              <Eye className="w-4 h-4" />
+              View as Tenant
+            </Button>
         </div>
       </div>
 
@@ -133,23 +155,41 @@ export default function TenantDetail() {
               <CardDescription>Update company information and internal notes</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Company Name</Label>
-                  <Input
-                    defaultValue={tenant.name}
-                    onChange={e => setSettingsForm(p => ({ ...p, name: e.target.value }))}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Company Name</Label>
+                    <Input
+                      defaultValue={tenant.name}
+                      onChange={e => setSettingsForm(p => ({ ...p, name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Logo URL</Label>
+                    <Input
+                      defaultValue={tenant.logoUrl ?? ""}
+                      placeholder="https://example.com/logo.png"
+                      onChange={e => setSettingsForm(p => ({ ...p, logoUrl: e.target.value }))}
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Logo URL</Label>
+                  <Label className="flex items-center gap-1.5">
+                    Subdomain / Slug
+                    <span className="text-xs text-muted-foreground font-normal">(lowercase letters, numbers, hyphens only)</span>
+                  </Label>
                   <Input
-                    defaultValue={tenant.logoUrl ?? ""}
-                    placeholder="https://example.com/logo.png"
-                    onChange={e => setSettingsForm(p => ({ ...p, logoUrl: e.target.value }))}
+                    defaultValue={tenant.slug}
+                    placeholder="e.g. onetouch"
+                    onChange={e => {
+                      const formatted = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+                      setSlugValue(formatted);
+                      e.target.value = formatted;
+                    }}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Portal URL preview: <span className="font-medium text-foreground">{currentSlug || tenant.slug}.aia-supportdesk.com</span>
+                  </p>
                 </div>
-              </div>
               <div className="space-y-2">
                 <Label className="flex items-center gap-2"><StickyNote className="w-4 h-4" />Internal Notes (only visible to you)</Label>
                 <Textarea
@@ -391,4 +431,3 @@ export default function TenantDetail() {
     </div>
   );
 }
-

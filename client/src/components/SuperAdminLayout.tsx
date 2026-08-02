@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
+  import {
   Building2,
   LayoutDashboard,
   LogOut,
   Shield,
   ChevronRight,
   Home,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation as useWouterLocation } from "wouter";
@@ -54,6 +55,7 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   const navItems = [
     { href: "/superadmin", label: "Overview", icon: LayoutDashboard },
     { href: "/superadmin/tenants", label: "Client Tenants", icon: Building2 },
+    { href: "/superadmin/search", label: "Global Search", icon: Search },
   ];
 
   return (

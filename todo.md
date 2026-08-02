@@ -76,7 +76,13 @@
 - [x] AdminLayout: Settings nav item visible to tenant admins (role=admin with tenantId)
 
 ## Pending / Future Work
-- [ ] Fill in DEMO_CALENDAR_URL and STRIPE_PAYMENT_URL constants in client/src/pages/Home.tsx
+- [x] Fill in DEMO_CALENDAR_URL in Home.tsx (https://api.leadconnectorhq.com/widget/bookings/jimmys-master-calendar)
+- [x] Set/Change Password feature for all admin users (/admin/profile page)
+- [x] Super Admin: View as Tenant (impersonation) — startImpersonation/exitImpersonation/impersonationStatus tRPC procedures, amber banner in AdminLayout, "View as Tenant" button in TenantDetail
+- [x] Super Admin: Global ticket search across all tenants — searchTicketsGlobal tRPC procedure, /superadmin/search page, Global Search nav item in SuperAdminLayout
+- [x] Editable slug field in TenantDetail Settings tab with live URL preview
+- [x] CreateTenant form: auto-format slug input and live URL preview
+- [x] Fixed OneTouch Media slug from 'onetouch-media' to 'onetouch' (deleted duplicate tenant ID 1)
 - [ ] Stripe paywall ($149/mo subscription before registration)
 - [ ] Path-based tenant routing (/t/:slug/) for demo before domain connection
 - [ ] True subdomain routing once aia-supportdesk.com is connected

@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "wouter";
-import {
+  import {
   BarChart3,
   HeadphonesIcon,
   LayoutDashboard,
@@ -11,7 +11,7 @@ import {
   Users,
   Shield,
 } from "lucide-react";
-import { Settings, UserCircle } from "lucide-react";
+import { Settings, UserCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -32,10 +32,24 @@ interface Props {
   title?: string;
 }
 
-export default function AdminLayout({ children, title }: Props) {
+  export default function AdminLayout({ children, title }: Props) {
   const { user, loading, isAuthenticated } = useAuth();
   const [location] = useLocation();
   const utils = trpc.useUtils();
+
+  const { data: impStatus } = trpc.tenants.impersonationStatus.useQuery(undefined, {
+    enabled: !!user,
+    refetchOnWindowFocus: false,
+  });
+
+  const exitImpersonation = trpc.tenants.exitImpersonation.useMutation({
+    onSuccess: () => {
+      utils.auth.me.invalidate();
+      toast.success("Exited impersonation mode");
+      window.location.href = "/superadmin/tenants";
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -174,6 +188,24 @@ export default function AdminLayout({ children, title }: Props) {
 
       {/* Main content */}
       <main className="flex-1 min-w-0 flex flex-col">
+        {impStatus?.isImpersonating && (
+          <div className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-amber-800">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm font-medium">
+                Viewing as <strong>{impStatus.tenantName}</strong> — you are in impersonation mode
+              </span>
+            </div>
+            <button
+              onClick={() => exitImpersonation.mutate()}
+              disabled={exitImpersonation.isPending}
+              className="flex items-center gap-1.5 text-xs font-medium text-amber-700 hover:text-amber-900 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-md transition-colors"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Exit — Return to Super Admin
+            </button>
+          </div>
+        )}
         {title && (
           <header className="bg-white border-b border-border/50 px-8 py-5">
             <h1 className="font-display text-xl font-medium text-foreground">{title}</h1>

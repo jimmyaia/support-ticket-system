@@ -22,6 +22,7 @@ import SuperAdminOverview from "./pages/superadmin/Overview";
 import TenantList from "./pages/superadmin/TenantList";
 import CreateTenant from "./pages/superadmin/CreateTenant";
 import TenantDetail from "./pages/superadmin/TenantDetail";
+import GlobalSearch from "./pages/superadmin/GlobalSearch";
 
 function Router() {
   return (
@@ -55,6 +56,9 @@ function Router() {
       </Route>
       <Route path="/superadmin/tenants/:id">
         {() => <SuperAdminLayout><TenantDetail /></SuperAdminLayout>}
+      </Route>
+      <Route path="/superadmin/search">
+        {() => <GlobalSearch />}
       </Route>
 
       <Route path="/404" component={NotFound} />

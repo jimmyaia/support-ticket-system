@@ -43,12 +43,18 @@ export default function CreateTenant() {
   });
 
   // Auto-generate slug from company name
-  const nameValue = watch("name");
+  const slugValue = watch("slug") || "";
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setValue("name", val);
     const slug = val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     setValue("slug", slug);
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+    setValue("slug", formatted, { shouldValidate: true });
+    e.target.value = formatted;
   };
 
   return (
@@ -83,9 +89,15 @@ export default function CreateTenant() {
               <div className="space-y-2">
                 <Label>Subdomain Slug *</Label>
                 <div className="flex items-center gap-2">
-                  <Input placeholder="acme" {...register("slug")} />
+                  <Input
+                    placeholder="acme"
+                    {...register("slug")}
+                    onChange={handleSlugChange}
+                  />
                 </div>
-                <p className="text-xs text-muted-foreground">acme.aia-supportdesk.com</p>
+                <p className="text-xs text-muted-foreground">
+                  Portal URL: <span className="font-medium text-foreground">{slugValue || "your-slug"}.aia-supportdesk.com</span>
+                </p>
                 {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
               </div>
             </div>
