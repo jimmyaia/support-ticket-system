@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import {
+  import {
   getAllStaff,
   getAllUsers,
   updateUserRole,
@@ -8,7 +8,10 @@ import {
   createGlobalStaff,
   getGlobalStaff,
   deleteUser,
+  createUser,
+  getUserByEmail,
 } from "../db";
+import { hashPassword } from "../_core/authService";
 import { protectedProcedure, router } from "../_core/trpc";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -105,6 +108,57 @@ export const staffRouter = router({
     .input(z.object({ userId: z.number(), tenantId: z.number().nullable() }))
     .mutation(async ({ input }) => {
       await updateUserTenant(input.userId, input.tenantId);
+      return { success: true };
+    }),
+
+  // Tenant admin: add a new staff/admin user to their own tenant
+  addToTenant: adminProcedure
+    .input(z.object({
+      firstName: z.string().min(1).max(100),
+      lastName: z.string().min(1).max(100),
+      email: z.string().email().max(320),
+      password: z.string().min(8).max(128),
+      role: z.enum(["staff", "admin"]),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      // Must be a tenant admin (not super admin)
+      if (!ctx.user.tenantId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Tenant admin access required" });
+      }
+      const existing = await getUserByEmail(input.email.toLowerCase().trim());
+      if (existing) {
+        throw new TRPCError({ code: "CONFLICT", message: "A user with this email already exists" });
+      }
+      const passwordHash = await hashPassword(input.password);
+      const name = `${input.firstName.trim()} ${input.lastName.trim()}`.trim();
+      const user = await createUser({
+        name,
+        email: input.email.toLowerCase().trim(),
+        passwordHash,
+        role: input.role,
+        tenantId: ctx.user.tenantId,
+      });
+      return { success: true, user };
+    }),
+
+  // Tenant admin: remove a user from their own tenant
+  removeFromTenant: adminProcedure
+    .input(z.object({ userId: z.number().int() }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user.tenantId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Tenant admin access required" });
+      }
+      // Verify the target user belongs to this tenant
+      const tenantUsers = await getAllStaff(ctx.user.tenantId);
+      const target = tenantUsers.find(u => u.id === input.userId);
+      if (!target) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "User not found in your tenant" });
+      }
+      // Prevent self-deletion
+      if (target.id === ctx.user.id) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "You cannot remove your own account" });
+      }
+      await deleteUser(input.userId);
       return { success: true };
     }),
 });
