@@ -24,7 +24,7 @@ const schema = z.object({
   description: z.string().min(10, "Please describe the issue (min 10 characters)").max(10000),
   priority: z.enum(["low", "medium", "high", "urgent"]),
 });
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8 MB (server limit is 10 MB)
 type FormData = z.infer<typeof schema>;
 
 interface Props {
@@ -55,8 +55,6 @@ export default function TenantPortal({ slug }: Props) {
     resolver: zodResolver(schema),
     defaultValues: { priority: "medium" },
   });
-
-  const uploadImage = trpc.tickets.getUploadUrl.useMutation();
 
   const submit = trpc.tickets.submit.useMutation({
     onSuccess: (data) => navigate(`/ticket-submitted/${data.ticketNumber}`),
@@ -92,16 +90,17 @@ export default function TenantPortal({ slug }: Props) {
 
     if (imageFile) {
       try {
-        const { uploadUrl, publicUrl } = await uploadImage.mutateAsync({
-          filename: imageFile.name,
-          contentType: imageFile.type,
-        });
-        await fetch(uploadUrl, {
-          method: "PUT",
-          body: imageFile,
+        const res = await fetch("/api/upload-ticket-image", {
+          method: "POST",
           headers: { "Content-Type": imageFile.type },
+          body: imageFile,
         });
-        imageUrl = publicUrl;
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || "Upload failed");
+        }
+        const { url } = await res.json();
+        imageUrl = url;
       } catch {
         toast.error("Failed to upload image. Please try again.");
         return;
@@ -134,7 +133,7 @@ export default function TenantPortal({ slug }: Props) {
     );
   }
 
-  const isSubmitting = submit.isPending || uploadImage.isPending;
+  const isSubmitting = submit.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
