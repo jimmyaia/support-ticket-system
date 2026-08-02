@@ -55,7 +55,7 @@ export const ticketsRouter = router({
         product: z.string().min(1).max(255).default("General"),
         description: z.string().min(1).max(10000),
         priority: z.enum(["low", "medium", "high", "urgent"]).default("medium"),
-        imageUrl: z.string().url().optional(),
+        imageUrl: z.string().min(1).max(2048).optional(),
         loomUrl: z.string().url().optional(),
       })
     )
