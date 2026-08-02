@@ -15,28 +15,23 @@ import { Settings, UserCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
-function TenantBranding() {
-  const { data: tenant } = trpc.tenants.getMyTenant.useQuery(undefined, {
-    staleTime: 60_000,
-    refetchOnWindowFocus: false,
-  });
-  if (!tenant?.name) return null;
+function TenantBranding({ name, logoUrl }: { name: string; logoUrl?: string | null }) {
   return (
     <div className="flex items-center gap-2.5">
-      {tenant.logoUrl ? (
+      {logoUrl ? (
         <img
-          src={tenant.logoUrl}
-          alt={tenant.name}
+          src={logoUrl}
+          alt={name}
           className="h-8 w-8 rounded-lg object-contain border border-border/40 bg-white p-0.5"
         />
       ) : (
         <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
           <span className="text-sm font-bold text-primary">
-            {tenant.name[0].toUpperCase()}
+            {name[0].toUpperCase()}
           </span>
         </div>
       )}
-      <span className="font-semibold text-foreground text-base leading-none">{tenant.name}</span>
+      <span className="font-semibold text-foreground text-base leading-none">{name}</span>
     </div>
   );
 }
@@ -62,6 +57,12 @@ interface Props {
   const { user, loading, isAuthenticated } = useAuth();
   const [location] = useLocation();
   const utils = trpc.useUtils();
+
+  const { data: tenantData } = trpc.tenants.getMyTenant.useQuery(undefined, {
+    enabled: !!user?.tenantId,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   const { data: impStatus } = trpc.tenants.impersonationStatus.useQuery(undefined, {
     enabled: !!user,
@@ -236,7 +237,9 @@ interface Props {
           <header className="bg-white border-b border-border/50 px-8 py-5">
             <div className="flex items-center justify-between">
               <h1 className="font-display text-xl font-medium text-foreground">{title}</h1>
-              <TenantBranding />
+              {tenantData?.name && (
+                <TenantBranding name={tenantData.name} logoUrl={tenantData.logoUrl} />
+              )}
             </div>
           </header>
         )}
