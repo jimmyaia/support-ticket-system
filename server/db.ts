@@ -103,6 +103,12 @@ export async function updateUserTenant(userId: number, tenantId: number | null) 
   await db.update(users).set({ tenantId: tenantId ?? undefined } as any).where(eq(users.id, userId));
 }
 
+export async function updateUserPassword(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ passwordHash, loginMethod: "email" } as any).where(eq(users.id, userId));
+}
+
 // ─── Tenants ──────────────────────────────────────────────────────────────────
 
 export async function createTenant(data: InsertTenant): Promise<Tenant> {

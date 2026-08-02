@@ -13,7 +13,22 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, Package, Plus, Trash2, GripVertical, Settings } from "lucide-react";
+import { Building2, Package, Plus, Trash2, GripVertical, Settings, KeyRound } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+
+const passwordSchema = z.object({
+  currentPassword: z.string().optional(),
+  newPassword: z.string()
+    .min(8, "Must be at least 8 characters")
+    .max(128)
+    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Must contain at least one number"),
+  confirmPassword: z.string(),
+}).refine(d => d.newPassword === d.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+type PasswordForm = z.infer<typeof passwordSchema>;
 
 const settingsSchema = z.object({
   name: z.string().min(1, "Company name is required").max(255),
@@ -25,6 +40,7 @@ export default function TenantSettings() {
   const { user } = useAuth();
   const tenantId = (user as any)?.tenantId as number | null;
   const [newProduct, setNewProduct] = useState("");
+  const hasPassword = !!(user as any)?.passwordHash;
 
   const { data: tenant, isLoading: tenantLoading, refetch: refetchTenant } = trpc.tenants.getMyTenant.useQuery(undefined, {
     enabled: !!tenantId,
@@ -54,6 +70,25 @@ export default function TenantSettings() {
     onSuccess: () => { refetchProducts(); toast.success("Product removed"); },
     onError: (e) => toast.error(e.message),
   });
+
+  const {
+    register: regPwd,
+    handleSubmit: handlePwdSubmit,
+    reset: resetPwd,
+    formState: { errors: pwdErrors },
+  } = useForm<PasswordForm>({ resolver: zodResolver(passwordSchema) });
+
+  const setPassword = trpc.auth.setPassword.useMutation({
+    onSuccess: () => {
+      toast.success(hasPassword ? "Password updated successfully" : "Password set — you can now log in with email/password");
+      resetPwd();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const onSetPassword = (data: PasswordForm) => {
+    setPassword.mutate({ newPassword: data.newPassword, currentPassword: data.currentPassword });
+  };
 
   const { register, handleSubmit, formState: { errors } } = useForm<SettingsForm>({
     resolver: zodResolver(settingsSchema),
@@ -136,6 +171,49 @@ export default function TenantSettings() {
         </Card>
 
         {/* Product Dropdown */}
+
+        {/* Change Password */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5" />
+              {hasPassword ? "Change Password" : "Set a Password"}
+            </CardTitle>
+            <CardDescription>
+              {hasPassword
+                ? "Update your login password. You'll need your current password to make changes."
+                : "Set a password so you can log in with your email address in addition to Google."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handlePwdSubmit(onSetPassword)} className="space-y-4 max-w-md">
+              {hasPassword && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Input id="currentPassword" type="password" {...regPwd("currentPassword")} />
+                  {pwdErrors.currentPassword && <p className="text-xs text-destructive">{pwdErrors.currentPassword.message}</p>}
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label htmlFor="newPassword">New Password</Label>
+                <Input id="newPassword" type="password" {...regPwd("newPassword")} />
+                {pwdErrors.newPassword && <p className="text-xs text-destructive">{pwdErrors.newPassword.message}</p>}
+                <p className="text-xs text-muted-foreground">Min 8 characters, 1 uppercase letter, 1 number.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                <Input id="confirmPassword" type="password" {...regPwd("confirmPassword")} />
+                {pwdErrors.confirmPassword && <p className="text-xs text-destructive">{pwdErrors.confirmPassword.message}</p>}
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={setPassword.isPending}>
+                  {setPassword.isPending ? "Saving..." : hasPassword ? "Update Password" : "Set Password"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -214,4 +292,3 @@ export default function TenantSettings() {
     </AdminLayout>
   );
 }
-

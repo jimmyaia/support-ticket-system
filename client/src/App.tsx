@@ -16,6 +16,7 @@ import AdminTicketDetail from "./pages/admin/TicketDetail";
 import AdminReports from "./pages/admin/Reports";
 import AdminStaff from "./pages/admin/Staff";
 import TenantSettings from "./pages/admin/TenantSettings";
+import AdminProfile from "./pages/admin/AdminProfile";
 import SuperAdminLayout from "./components/SuperAdminLayout";
 import SuperAdminOverview from "./pages/superadmin/Overview";
 import TenantList from "./pages/superadmin/TenantList";
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/admin/reports" component={AdminReports} />
       <Route path="/admin/staff" component={AdminStaff} />
       <Route path="/admin/settings" component={TenantSettings} />
+      <Route path="/admin/profile" component={AdminProfile} />
 
       {/* Super Admin routes */}
       <Route path="/superadmin">

@@ -11,7 +11,7 @@ import {
   Users,
   Shield,
 } from "lucide-react";
-import { Settings } from "lucide-react";
+import { Settings, UserCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -156,6 +156,12 @@ export default function AdminLayout({ children, title }: Props) {
               </div>
             </Link>
           )}
+          <Link href="/admin/profile">
+            <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer mb-1">
+              <UserCircle className="w-4 h-4" />
+              My Profile
+            </div>
+          </Link>
           <button
             onClick={() => logoutMutation.mutate()}
             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

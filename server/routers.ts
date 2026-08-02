@@ -63,6 +63,32 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    setPassword: protectedProcedure
+      .input(z.object({
+        newPassword: z.string()
+          .min(8, "Password must be at least 8 characters")
+          .max(128, "Password must be at most 128 characters")
+          .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+          .regex(/[0-9]/, "Password must contain at least one number"),
+        currentPassword: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserById(ctx.user.id);
+        if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "User not found." });
+        // If user already has a password, require current password to change it
+        if (user.passwordHash) {
+          if (!input.currentPassword) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Current password is required to change your password." });
+          }
+          const valid = await verifyPassword(input.currentPassword, user.passwordHash);
+          if (!valid) {
+            throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect." });
+          }
+        }
+        const passwordHash = await hashPassword(input.newPassword);
+        await db.updateUserPassword(ctx.user.id, passwordHash);
+        return { success: true };
+      }),
   }),
   tickets: ticketsRouter,
   staff: staffRouter,
