@@ -25,13 +25,25 @@ export const staffRouter = router({
       return getAllStaff(tenantId);
     }),
 
-  listAll: adminProcedure.query(async () => {
+  listAll: adminProcedure.query(async ({ ctx }) => {
+    // Super admins (no tenantId) see all users; tenant admins see only their tenant
+    if (ctx.user.tenantId) {
+      return getAllStaff(ctx.user.tenantId);
+    }
     return getAllUsers();
   }),
 
   updateRole: adminProcedure
     .input(z.object({ userId: z.number(), role: z.enum(["user", "admin", "staff"]) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      // Tenant admins can only change roles of users in their own tenant
+      if (ctx.user.tenantId) {
+        const targetUsers = await getAllStaff(ctx.user.tenantId);
+        const isInTenant = targetUsers.some(u => u.id === input.userId);
+        if (!isInTenant) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Cannot modify users outside your tenant" });
+        }
+      }
       await updateUserRole(input.userId, input.role);
       return { success: true };
     }),

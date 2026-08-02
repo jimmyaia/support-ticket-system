@@ -8,7 +8,6 @@ import { z } from "zod";
   getAllStaff,
   getTenantById,
   getTenantBySlug,
-  getTenantProducts,
   getTenantStats,
   getWebhookLogs,
   addTenantProduct,
@@ -18,7 +17,6 @@ import { z } from "zod";
   updateTenant,
   getUserByEmail,
   listTickets,
-  getUserById,
 } from "../db";
 import { hashPassword, createSessionToken, getRealUser } from "../_core/authService";
 import { protectedProcedure, router } from "../_core/trpc";

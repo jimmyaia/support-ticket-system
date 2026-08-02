@@ -314,7 +314,7 @@ export default function TenantDetail() {
                     resolvedAt: null,
                   },
                   customer: { name: "Jane Smith", email: "jane@example.com", phone: "+1-555-0100" },
-                  statusPageUrl: `https://${tenant.slug}.aia-supportdesk.com/status/TKT-M3X7K2A-9FZ`,
+                  statusPageUrl: `${window.location.origin}/check-status?t=${tenant.slug}&ticket=TKT-M3X7K2A-9FZ`,
                 }, null, 2)}</pre>
               </CardContent>
             </Card>
