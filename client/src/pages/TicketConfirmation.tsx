@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Copy, HeadphonesIcon, Search } from "lucide-react";
 import { toast } from "sonner";
+import { useSubdomain } from "@/hooks/useSubdomain";
 
 interface Props {
   params: { ticketNumber: string };
@@ -9,6 +10,9 @@ interface Props {
 
 export default function TicketConfirmation({ params }: Props) {
   const { ticketNumber } = params;
+  const slug = useSubdomain();
+  // On a tenant subdomain, status link goes to /status; on root domain, to /check-status
+  const statusUrl = slug ? `/status?ticket=${ticketNumber}` : `/check-status?ticket=${ticketNumber}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(ticketNumber);
@@ -54,7 +58,7 @@ export default function TicketConfirmation({ params }: Props) {
         </div>
 
         <div className="space-y-3">
-          <Link href={`/check-status?ticket=${ticketNumber}`}>
+          <Link href={statusUrl}>
             <Button size="lg" className="w-full gap-2 h-12">
               <Search className="w-4 h-4" />
               Check Ticket Status

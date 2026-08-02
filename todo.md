@@ -129,3 +129,11 @@
 - [ ] Add vitest: getTenantInfoBySlug returns correct tenant info for valid slug
 - [ ] Cloudflare wildcard DNS record (* CNAME cname.manus.space) — user action required
 - [ ] Add *.aia-supportdesk.com wildcard domain in Manus Settings → Domains — user action required
+
+## Domain & Cloudflare Setup
+- [x] Cloudflare nameservers set in Bluehost
+- [x] Cloudflare wildcard DNS record (* CNAME cname.manus.space) — done
+- [x] Cloudflare Worker deployed (aiasupportdesk-proxy) — proxies *.aia-supportdesk.com to Manus app
+- [x] Worker route set: *.aia-supportdesk.com/* → aiasupportdesk-proxy
+- [x] useSubdomain hook bug fixed — now correctly detects slug from hostname
+- [x] TicketConfirmation updated to link to /status on subdomains vs /check-status on root

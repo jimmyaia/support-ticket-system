@@ -7,10 +7,6 @@ const ROOT_DOMAINS = ["aia-supportdesk.com", "localhost", "manus.computer", "man
 
 export function useSubdomain(): string | null {
   const hostname = window.location.hostname;
-  // Check if we are on a known root domain or IP
-  if (ROOT_DOMAINS.some(d => hostname === d || hostname.endsWith(`.${d}`) === false && hostname === d)) {
-    return null;
-  }
   // Extract subdomain: anything before the first dot that is not "www"
   const parts = hostname.split(".");
   if (parts.length < 3) return null; // no subdomain
@@ -18,6 +14,6 @@ export function useSubdomain(): string | null {
   if (sub === "www") return null;
   // Make sure we are on aia-supportdesk.com (not manus.space dev URL)
   const rootDomain = parts.slice(1).join(".");
-  if (!rootDomain.startsWith("aia-supportdesk.com")) return null;
+  if (rootDomain !== "aia-supportdesk.com") return null;
   return sub;
 }
