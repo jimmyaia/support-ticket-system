@@ -120,7 +120,7 @@ export default function TenantDetail() {
             )}
             <div>
               <h1 className="text-2xl font-bold">{tenant.name}</h1>
-              <p className="text-muted-foreground text-sm">https://aia-supportdesk.com/submit?tenantId={tenant.id}</p>
+              <p className="text-muted-foreground text-sm">https://{tenant.slug}.aia-supportdesk.com</p>
             </div>
           </div>
             <Badge variant={tenant.isActive ? "default" : "secondary"} className="text-sm px-3 py-1">
@@ -187,7 +187,7 @@ export default function TenantDetail() {
                     }}
                   />
                   <p className="text-xs text-muted-foreground">
-                  Portal URL preview: <span className="font-medium text-foreground">https://aia-supportdesk.com/submit?tenantId={tenant.id}</span>
+                  Portal URL: <span className="font-medium text-foreground">https://{currentSlug}.aia-supportdesk.com</span>
                   </p>
                 </div>
               <div className="space-y-2">
@@ -314,7 +314,7 @@ export default function TenantDetail() {
                     resolvedAt: null,
                   },
                   customer: { name: "Jane Smith", email: "jane@example.com", phone: "+1-555-0100" },
-                  statusPageUrl: `https://aia-supportdesk.com/check-status?t=${tenant.slug}&ticket=TKT-M3X7K2A-9FZ`,
+                  statusPageUrl: `https://${tenant.slug}.aia-supportdesk.com/status?ticket=TKT-M3X7K2A-9FZ`,
                 }, null, 2)}</pre>
               </CardContent>
             </Card>

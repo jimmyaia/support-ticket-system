@@ -14,6 +14,7 @@ import {
   listTickets,
   updateTicketStatus,
 } from "../db";
+import { getTenantBySlug } from "../db";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { fireWebhook, buildStatusPageUrl } from "../ghlWebhook";
 
@@ -234,5 +235,23 @@ export const ticketsRouter = router({
       const tenant = await getTenantById(input.tenantId);
       if (!tenant || !tenant.isActive) return null;
       return { name: tenant.name, logoUrl: tenant.logoUrl ?? null };
+    }),
+
+  // Public: get tenant info by slug (for subdomain portals)
+  getTenantInfoBySlug: publicProcedure
+    .input(z.object({ slug: z.string().min(1).max(63) }))
+    .query(async ({ input }) => {
+      const tenant = await getTenantBySlug(input.slug);
+      if (!tenant || !tenant.isActive) return null;
+      return { id: tenant.id, name: tenant.name, logoUrl: tenant.logoUrl ?? null, slug: tenant.slug };
+    }),
+
+  // Public: get tenant products by slug (for subdomain portals)
+  getProductsBySlug: publicProcedure
+    .input(z.object({ slug: z.string().min(1).max(63) }))
+    .query(async ({ input }) => {
+      const tenant = await getTenantBySlug(input.slug);
+      if (!tenant || !tenant.isActive) return [];
+      return getTenantProducts(tenant.id);
     }),
 });

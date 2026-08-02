@@ -139,7 +139,7 @@ export default function TenantList() {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        https://aia-supportdesk.com/submit?tenantId={tenant.id}
+                        https://{tenant.slug}.aia-supportdesk.com
                         <span className="mx-2">·</span>
                         <span className="inline-flex items-center gap-1"><TicketCheck className="w-3 h-3" />{tenant.ticketCount} tickets</span>
                         <span className="mx-2">·</span>

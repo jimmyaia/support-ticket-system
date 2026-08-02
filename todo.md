@@ -110,3 +110,22 @@
 - [x] TenantBranding component in AdminLayout header (company logo + name for tenant admins)
 - [x] Public portal branding: SubmitTicket and CheckStatus show "Welcome to [Company Name] Support" via getTenantInfo tRPC procedure
 - [x] Global Staff management page in Super Admin (/superadmin/staff)
+
+## Subdomain-Based Multi-Tenant Routing
+- [x] Add getTenantBySlug public tRPC procedure (returns name, logoUrl, id, isActive)
+- [x] Add getBySlugPublic public tRPC procedure to tickets router for slug-based tenant lookup
+- [x] Add subdomain detection hook (useSubdomain) on frontend — reads slug from window.location.hostname
+- [x] Create TenantPortal page (/): when on slug subdomain, renders SubmitTicket branded for that tenant
+- [x] Create TenantStatus page (/status): when on slug subdomain, renders CheckStatus for that tenant
+- [x] Update App.tsx routing to detect subdomain and serve portal/status pages at root
+- [x] Add getTenantInfoBySlug and getProductsBySlug public tRPC procedures
+- [x] Update GHL webhook buildStatusPageUrl to use slug.aia-supportdesk.com format
+- [x] Update all admin UI tenant URL displays to show slug.aia-supportdesk.com
+- [x] Update CreateTenant portal URL preview to show slug.aia-supportdesk.com (live preview as slug is typed)
+- [x] Update TenantDetail portal URL to show slug.aia-supportdesk.com
+- [x] Update TenantList portal URL to show slug.aia-supportdesk.com
+- [x] Update TenantSettings portal URL to show slug.aia-supportdesk.com
+- [x] Handle unknown subdomain: friendly error page with redirect to aia-supportdesk.com
+- [ ] Add vitest: getTenantInfoBySlug returns correct tenant info for valid slug
+- [ ] Cloudflare wildcard DNS record (* CNAME cname.manus.space) — user action required
+- [ ] Add *.aia-supportdesk.com wildcard domain in Manus Settings → Domains — user action required

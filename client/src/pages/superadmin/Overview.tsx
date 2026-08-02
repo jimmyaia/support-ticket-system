@@ -93,7 +93,7 @@ export default function SuperAdminOverview() {
                         </div>
                         <div>
                           <p className="font-medium text-sm">{t.name}</p>
-                          <p className="text-xs text-muted-foreground">/submit?tenantId={t.id} · {t.ticketCount} tickets</p>
+                          <p className="text-xs text-muted-foreground">{t.slug}.aia-supportdesk.com · {t.ticketCount} tickets</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

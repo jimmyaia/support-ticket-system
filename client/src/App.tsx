@@ -1,4 +1,6 @@
 import { Toaster } from "@/components/ui/sonner";
+import { useEffect } from "react";
+import { useLocation } from "wouter";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
@@ -24,8 +26,31 @@ import CreateTenant from "./pages/superadmin/CreateTenant";
 import TenantDetail from "./pages/superadmin/TenantDetail";
 import GlobalSearch from "./pages/superadmin/GlobalSearch";
 import GlobalStaff from "./pages/superadmin/GlobalStaff";
+import TenantPortal from "./pages/TenantPortal";
+import TenantStatus from "./pages/TenantStatus";
+import { useSubdomain } from "./hooks/useSubdomain";
 
 function Router() {
+  const slug = useSubdomain();
+
+  // When accessed via a tenant subdomain (e.g. onetouch.aia-supportdesk.com),
+  // serve the branded portal and status pages only.
+  if (slug) {
+    return (
+      <Switch>
+        <Route path="/" component={() => <TenantPortal slug={slug} />} />
+        <Route path="/status" component={() => <TenantStatus slug={slug} />} />
+        <Route path="/ticket-submitted/:ticketNumber" component={TicketConfirmation} />
+        {/* Unknown paths on a subdomain → redirect to portal root */}
+        <Route component={() => {
+          const [, navigate] = useLocation();
+          useEffect(() => { navigate("/"); }, [navigate]);
+          return null;
+        }} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
       {/* Public routes */}
