@@ -46,6 +46,39 @@ async function startServer() {
     })
   );
 
+  // ── Image upload endpoint (MUST be registered BEFORE global body parsers) ──
+  // express.json/urlencoded run first and consume the raw binary body, leaving
+  // the upload handler with an empty buffer. Register it here with its own
+  // express.raw parser so it gets the binary data intact.
+  app.post(
+    "/api/upload-ticket-image",
+    express.raw({ type: "*/*", limit: "10mb" }),
+    async (req, res) => {
+      try {
+        const contentType = req.headers["content-type"] || "application/octet-stream";
+        const body = req.body as Buffer;
+        if (!body || body.length === 0) {
+          res.status(400).json({ error: "No file data received" });
+          return;
+        }
+        const mimeType = contentType.split(";")[0].trim().toLowerCase();
+        if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
+          res.status(400).json({ error: "Only image files (JPEG, PNG, GIF, WebP) are allowed." });
+          return;
+        }
+        const ext = mimeType.includes("png") ? "png"
+          : mimeType.includes("gif") ? "gif"
+          : mimeType.includes("webp") ? "webp"
+          : "jpg";
+        const { url } = await storagePut(`ticket-images/${Date.now()}.${ext}`, body, mimeType);
+        res.json({ url });
+      } catch (err) {
+        console.error("[Upload] Error:", err);
+        res.status(500).json({ error: "Upload failed" });
+      }
+    }
+  );
+
   // ── Body size limits (tight — no reason to accept 50 MB JSON) ──────────────
   app.use(express.json({ limit: "1mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
@@ -97,38 +130,6 @@ async function startServer() {
   app.use("/api", apiLimiter);
 
   registerStorageProxy(app);
-
-  // ── Image upload endpoint ───────────────────────────────────────────────────
-  app.post(
-    "/api/upload-ticket-image",
-    uploadLimiter,
-    express.raw({ type: "*/*", limit: "10mb" }),
-    async (req, res) => {
-      try {
-        const contentType = req.headers["content-type"] || "application/octet-stream";
-        const body = req.body as Buffer;
-        if (!body || body.length === 0) {
-          res.status(400).json({ error: "No file data received" });
-          return;
-        }
-        // Validate MIME type — only allow images
-        const mimeType = contentType.split(";")[0].trim().toLowerCase();
-        if (!ALLOWED_IMAGE_TYPES.has(mimeType)) {
-          res.status(400).json({ error: "Only image files (JPEG, PNG, GIF, WebP) are allowed." });
-          return;
-        }
-        const ext = mimeType.includes("png") ? "png"
-          : mimeType.includes("gif") ? "gif"
-          : mimeType.includes("webp") ? "webp"
-          : "jpg";
-        const { url } = await storagePut(`ticket-images/${Date.now()}.${ext}`, body, mimeType);
-        res.json({ url });
-      } catch (err) {
-        console.error("[Upload] Error:", err);
-        res.status(500).json({ error: "Upload failed" });
-      }
-    }
-  );
 
   // ── tRPC ────────────────────────────────────────────────────────────────────
   app.use(
