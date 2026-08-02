@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, HeadphonesIcon, Loader2, Search, TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -37,7 +36,7 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
     { enabled: tenantId > 0, staleTime: 60_000 }
   );
 
-  const { data, isLoading, error, refetch } = trpc.tickets.lookup.useQuery(
+  const { data, isLoading, error } = trpc.tickets.lookup.useQuery(
     { ticketNumber: queryTicket },
     { enabled: !!queryTicket, retry: false }
   );

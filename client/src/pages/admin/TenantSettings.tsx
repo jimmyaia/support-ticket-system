@@ -142,7 +142,7 @@ export default function TenantSettings() {
                   )}
                   <div>
                     <p className="font-semibold text-foreground">{tenant?.name}</p>
-                    <p className="text-xs text-muted-foreground">{tenant?.slug}.aia-supportdesk.com</p>
+                    <p className="text-xs text-muted-foreground">{window.location.origin}/submit?tenantId={tenant?.id}</p>
                     <Badge variant={tenant?.isActive ? "default" : "secondary"} className="text-xs mt-1">
                       {tenant?.isActive ? "Active" : "Suspended"}
                     </Badge>

@@ -381,12 +381,6 @@ export async function assignTicket(id: number, assigneeId: number | null) {
   await db.update(tickets).set({ assigneeId: assigneeId ?? undefined } as any).where(eq(tickets.id, id));
 }
 
-export async function updateTicketImageUrl(id: number, imageUrl: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  await db.update(tickets).set({ imageUrl }).where(eq(tickets.id, id));
-}
-
 // ─── Ticket Notes ─────────────────────────────────────────────────────────────
 
 export async function addTicketNote(data: InsertTicketNote) {

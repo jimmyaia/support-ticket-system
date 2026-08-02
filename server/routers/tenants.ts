@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-  import {
+import {
   createTenant,
   createUser,
   deleteTenant,
@@ -39,7 +39,7 @@ const tenantAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
-  export const tenantsRouter = router({
+export const tenantsRouter = router({
   // Super admin: start impersonating a tenant admin
   startImpersonation: superAdminProcedure
     .input(z.object({ tenantId: z.number().int() }))

@@ -120,7 +120,7 @@ export default function TenantDetail() {
             )}
             <div>
               <h1 className="text-2xl font-bold">{tenant.name}</h1>
-              <p className="text-muted-foreground text-sm">{tenant.slug}.aia-supportdesk.com</p>
+              <p className="text-muted-foreground text-sm">{window.location.origin}/submit?tenantId={tenant.id}</p>
             </div>
           </div>
             <Badge variant={tenant.isActive ? "default" : "secondary"} className="text-sm px-3 py-1">
@@ -187,7 +187,7 @@ export default function TenantDetail() {
                     }}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Portal URL preview: <span className="font-medium text-foreground">{currentSlug || tenant.slug}.aia-supportdesk.com</span>
+                  Portal URL preview: <span className="font-medium text-foreground">{window.location.origin}/submit?tenantId={tenant.id}</span>
                   </p>
                 </div>
               <div className="space-y-2">

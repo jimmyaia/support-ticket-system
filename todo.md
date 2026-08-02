@@ -106,3 +106,7 @@
 - [x] Security & code audit: removed unused imports (getTenantProducts, getUserById from tenants.ts; Badge/CardDescription from GlobalSearch.tsx), deleted dead ComponentShowcase.tsx (1437 lines), added tenant-scoping guard to staff.listAll and staff.updateRole, fixed hardcoded domain in TenantDetail webhook preview
 - [x] Company admin: add staff users (first name, last name, email, password, role) directly from admin Staff page
 - [x] Company admin: remove staff users from their tenant
+- [x] Second audit pass: removed unused imports (useEffect, Badge, refetch from CheckStatus.tsx), fixed indented import blocks in tenants.ts and staff.ts (was causing stale esbuild error), removed orphaned updateTicketImageUrl function from db.ts, replaced all hardcoded aia-supportdesk.com domain references with window.location.origin/tenantId URLs across TenantDetail, CreateTenant, TenantList, Overview, TenantSettings
+- [x] TenantBranding component in AdminLayout header (company logo + name for tenant admins)
+- [x] Public portal branding: SubmitTicket and CheckStatus show "Welcome to [Company Name] Support" via getTenantInfo tRPC procedure
+- [x] Global Staff management page in Super Admin (/superadmin/staff)
