@@ -15,6 +15,32 @@ import { Settings, UserCircle, AlertTriangle, ArrowLeft } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
+function TenantBranding() {
+  const { data: tenant } = trpc.tenants.getMyTenant.useQuery(undefined, {
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  if (!tenant?.name) return null;
+  return (
+    <div className="flex items-center gap-2.5">
+      {tenant.logoUrl ? (
+        <img
+          src={tenant.logoUrl}
+          alt={tenant.name}
+          className="h-8 w-8 rounded-lg object-contain border border-border/40 bg-white p-0.5"
+        />
+      ) : (
+        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <span className="text-sm font-bold text-primary">
+            {tenant.name[0].toUpperCase()}
+          </span>
+        </div>
+      )}
+      <span className="font-semibold text-foreground text-base leading-none">{tenant.name}</span>
+    </div>
+  );
+}
+
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/tickets", label: "Tickets", icon: Ticket },
@@ -208,7 +234,10 @@ interface Props {
         )}
         {title && (
           <header className="bg-white border-b border-border/50 px-8 py-5">
-            <h1 className="font-display text-xl font-medium text-foreground">{title}</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="font-display text-xl font-medium text-foreground">{title}</h1>
+              <TenantBranding />
+            </div>
           </header>
         )}
         <div className="flex-1 p-8">
