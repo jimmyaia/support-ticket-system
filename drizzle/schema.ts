@@ -48,6 +48,14 @@ export const tenants = mysqlTable("tenants", {
   // Notification toggles
   ghlSendEmail: boolean("ghlSendEmail").default(true).notNull(),
   ghlSendSms: boolean("ghlSendSms").default(true).notNull(),
+  // GHL Opportunity custom field keys (IDs from GHL, set during onboarding)
+  ghlFieldTicketNumber: varchar("ghlFieldTicketNumber", { length: 100 }),
+  ghlFieldDescription: varchar("ghlFieldDescription", { length: 100 }),
+  ghlFieldPriority: varchar("ghlFieldPriority", { length: 100 }),
+  ghlFieldProduct: varchar("ghlFieldProduct", { length: 100 }),
+  ghlFieldStatus: varchar("ghlFieldStatus", { length: 100 }),
+  ghlFieldTicketUrl: varchar("ghlFieldTicketUrl", { length: 100 }),
+  ghlFieldLoomUrl: varchar("ghlFieldLoomUrl", { length: 100 }),
   ghlWebhookNewTicket: boolean("ghlWebhookNewTicket").default(true).notNull(),
   ghlWebhookStatusChange: boolean("ghlWebhookStatusChange").default(true).notNull(),
   ghlWebhookAssignment: boolean("ghlWebhookAssignment").default(true).notNull(),

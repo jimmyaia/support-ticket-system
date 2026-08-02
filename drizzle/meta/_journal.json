@@ -43,6 +43,13 @@
       "when": 1785690444860,
       "tag": "0005_redundant_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1785691535655,
+      "tag": "0006_brown_silhouette",
+      "breakpoints": true
     }
   ]
 }

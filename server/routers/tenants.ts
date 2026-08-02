@@ -372,6 +372,13 @@ export const tenantsRouter = router({
         ghlStageCompleted: z.string().max(100).optional(),
         ghlStageClosed: z.string().max(100).optional(),
         ghlSendEmail: z.boolean().default(true),
+        ghlFieldTicketNumber: z.string().max(100).optional(),
+        ghlFieldDescription: z.string().max(100).optional(),
+        ghlFieldPriority: z.string().max(100).optional(),
+        ghlFieldProduct: z.string().max(100).optional(),
+        ghlFieldStatus: z.string().max(100).optional(),
+        ghlFieldTicketUrl: z.string().max(100).optional(),
+        ghlFieldLoomUrl: z.string().max(100).optional(),
         ghlSendSms: z.boolean().default(true),
       })
     )

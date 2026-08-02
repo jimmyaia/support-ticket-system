@@ -26,6 +26,7 @@ import {
   sendGhlEmail,
   sendGhlSms,
   buildGhlNotificationMessages,
+  buildGhlCustomFields,
 } from "../ghl";
 
 async function getPresignedPutUrl(filename: string): Promise<{ uploadUrl: string; publicUrl: string }> {
@@ -103,7 +104,16 @@ export const ticketsRouter = router({
                 if (tenant.ghlPipelineId && tenant.ghlStageNew) {
                   opportunityId = await createGhlOpportunity(tenant.ghlApiKey!, tenant.ghlLocationId!, {
                     contactId, pipelineId: tenant.ghlPipelineId, stageId: tenant.ghlStageNew,
-                    name: `[${ticket.ticketNumber}] ${ticket.subject}`,
+                    name: `${ticket.ticketNumber} - ${ticket.subject}`,
+                    customFields: buildGhlCustomFields(tenant, {
+                      ticketNumber: ticket.ticketNumber,
+                      description: ticket.description,
+                      priority: ticket.priority,
+                      product: ticket.product,
+                      status: ticket.status,
+                      ticketUrl: buildStatusPageUrl(tenant.slug, ticket.ticketNumber),
+                      loomUrl: ticket.loomUrl,
+                    }),
                   });
                 }
                 await updateTicketGhlIds(ticket.id, { ghlContactId: contactId, ghlOpportunityId: opportunityId });
@@ -219,7 +229,17 @@ export const ticketsRouter = router({
                 const stageId = stageMap[input.status];
                 const oppStatus = input.status === "completed" ? "won" : input.status === "closed" ? "lost" : undefined;
                 if (ticket.ghlOpportunityId && stageId) {
-                  await updateGhlOpportunityStage(tenant.ghlApiKey!, ticket.ghlOpportunityId, stageId, oppStatus);
+                  await updateGhlOpportunityStage(tenant.ghlApiKey!, ticket.ghlOpportunityId, stageId, oppStatus,
+                    buildGhlCustomFields(tenant, {
+                      ticketNumber: ticket.ticketNumber,
+                      description: ticket.description,
+                      priority: ticket.priority,
+                      product: ticket.product,
+                      status: input.status,
+                      ticketUrl: buildStatusPageUrl(tenant.slug, ticket.ticketNumber),
+                      loomUrl: ticket.loomUrl,
+                    })
+                  );
                 }
                 const msgs = buildGhlNotificationMessages(input.status, { name: ticket.name, ticketNumber: ticket.ticketNumber, subject: ticket.subject, statusPageUrl: buildStatusPageUrl(tenant.slug, ticket.ticketNumber) });
                 const contactId = ticket.ghlContactId;

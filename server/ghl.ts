@@ -150,8 +150,9 @@ export async function createGhlOpportunity(
     contactId: string;
     pipelineId: string;
     stageId: string;
-    name: string;   // ticket subject
+    name: string;         // formatted as "TICKET# - subject"
     status?: string;
+    customFields?: { id: string; value: string }[];
   }
 ): Promise<string> {
   const resp = await fetch(`${GHL_BASE}/opportunities/`, {
@@ -165,6 +166,7 @@ export async function createGhlOpportunity(
       name: data.name,
       status: data.status ?? "open",
       source: "AIA SupportDesk",
+      ...(data.customFields && data.customFields.length > 0 ? { customFields: data.customFields } : {}),
     }),
   });
 
@@ -184,7 +186,8 @@ export async function updateGhlOpportunityStage(
   apiKey: string,
   opportunityId: string,
   stageId: string,
-  opportunityStatus?: "open" | "won" | "lost" | "abandoned"
+  opportunityStatus?: "open" | "won" | "lost" | "abandoned",
+  customFields?: { id: string; value: string }[]
 ): Promise<void> {
   const resp = await fetch(`${GHL_BASE}/opportunities/${opportunityId}`, {
     method: "PUT",
@@ -192,6 +195,7 @@ export async function updateGhlOpportunityStage(
     body: JSON.stringify({
       pipelineStageId: stageId,
       ...(opportunityStatus ? { status: opportunityStatus } : {}),
+      ...(customFields && customFields.length > 0 ? { customFields } : {}),
     }),
   });
 
@@ -337,6 +341,41 @@ const STATUS_MESSAGES: Record<string, { subject: (ticketNumber: string) => strin
       `Hi ${name}, your support ticket ${ticketNumber} has been closed. Submit a new ticket if needed: ${statusPageUrl}`,
   },
 };
+
+/**
+ * Build the customFields array for a GHL opportunity from ticket data and tenant field key config.
+ * Only includes fields where the tenant has configured a field key.
+ */
+export function buildGhlCustomFields(
+  fieldKeys: {
+    ghlFieldTicketNumber?: string | null;
+    ghlFieldDescription?: string | null;
+    ghlFieldPriority?: string | null;
+    ghlFieldProduct?: string | null;
+    ghlFieldStatus?: string | null;
+    ghlFieldTicketUrl?: string | null;
+    ghlFieldLoomUrl?: string | null;
+  },
+  ticketData: {
+    ticketNumber: string;
+    description: string;
+    priority: string;
+    product: string;
+    status: string;
+    ticketUrl: string;
+    loomUrl?: string | null;
+  }
+): { id: string; value: string }[] {
+  const fields: { id: string; value: string }[] = [];
+  if (fieldKeys.ghlFieldTicketNumber) fields.push({ id: fieldKeys.ghlFieldTicketNumber, value: ticketData.ticketNumber });
+  if (fieldKeys.ghlFieldDescription) fields.push({ id: fieldKeys.ghlFieldDescription, value: ticketData.description });
+  if (fieldKeys.ghlFieldPriority) fields.push({ id: fieldKeys.ghlFieldPriority, value: ticketData.priority });
+  if (fieldKeys.ghlFieldProduct) fields.push({ id: fieldKeys.ghlFieldProduct, value: ticketData.product });
+  if (fieldKeys.ghlFieldStatus) fields.push({ id: fieldKeys.ghlFieldStatus, value: STATUS_LABELS[ticketData.status] ?? ticketData.status });
+  if (fieldKeys.ghlFieldTicketUrl) fields.push({ id: fieldKeys.ghlFieldTicketUrl, value: ticketData.ticketUrl });
+  if (fieldKeys.ghlFieldLoomUrl && ticketData.loomUrl) fields.push({ id: fieldKeys.ghlFieldLoomUrl, value: ticketData.loomUrl });
+  return fields;
+}
 
 export function buildGhlNotificationMessages(
   status: string,

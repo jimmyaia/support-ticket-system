@@ -67,6 +67,13 @@ export default function TenantDetail() {
     ghlStageClosed?: string;
     ghlSendEmail?: boolean;
     ghlSendSms?: boolean;
+    ghlFieldTicketNumber?: string;
+    ghlFieldDescription?: string;
+    ghlFieldPriority?: string;
+    ghlFieldProduct?: string;
+    ghlFieldStatus?: string;
+    ghlFieldTicketUrl?: string;
+    ghlFieldLoomUrl?: string;
   }>({});
   const [pipelineData, setPipelineData] = useState<{ id: string; name: string; stages: { id: string; name: string }[] }[]>([]);
   const [fetchingPipelines, setFetchingPipelines] = useState(false);
@@ -453,6 +460,70 @@ export default function TenantDetail() {
                     Pipeline already configured (ID: {tenant.ghlPipelineId}). Click "Fetch Pipelines" to update the mapping.
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            {/* GHL Opportunity Custom Field Keys */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Opportunity Custom Field Keys</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Enter the GHL custom field IDs for each piece of ticket data to push into the opportunity.
+                  Find these in GHL: Settings → Custom Fields → Opportunities. Leave blank to skip that field.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {([
+                  { key: "ghlFieldTicketNumber", label: "Ticket Number" },
+                  { key: "ghlFieldDescription", label: "Issue Description" },
+                  { key: "ghlFieldPriority", label: "Priority" },
+                  { key: "ghlFieldProduct", label: "Product / Service" },
+                  { key: "ghlFieldStatus", label: "Ticket Status" },
+                  { key: "ghlFieldTicketUrl", label: "Ticket Status URL" },
+                  { key: "ghlFieldLoomUrl", label: "Loom Video URL" },
+                ] as { key: keyof typeof ghlForm; label: string }[]).map(({ key, label }) => (
+                  <div key={key} className="grid grid-cols-2 gap-3 items-center">
+                    <Label className="text-xs">{label}</Label>
+                    <Input
+                      className="h-8 text-xs"
+                      placeholder="GHL custom field ID"
+                      defaultValue={(tenant as any)[key] ?? ""}
+                      onChange={e => setGhlForm(p => ({ ...p, [key]: e.target.value }))}
+                    />
+                  </div>
+                ))}
+                <div className="pt-2">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      const apiKey = ghlForm.ghlApiKey ?? tenant.ghlApiKey ?? "";
+                      const locationId = ghlForm.ghlLocationId ?? (tenant as any).ghlLocationId ?? "";
+                      const pipelineId = ghlForm.ghlPipelineId ?? tenant.ghlPipelineId ?? "";
+                      if (!apiKey || !locationId || !pipelineId) {
+                        toast.error("Save the API key, Location ID, and Pipeline first");
+                        return;
+                      }
+                      saveGhlConfig.mutate({
+                        tenantId,
+                        ghlApiKey: apiKey,
+                        ghlLocationId: locationId,
+                        ghlPipelineId: pipelineId,
+                        ghlSendEmail: ghlForm.ghlSendEmail ?? tenant.ghlSendEmail ?? true,
+                        ghlSendSms: ghlForm.ghlSendSms ?? tenant.ghlSendSms ?? true,
+                        ghlFieldTicketNumber: ghlForm.ghlFieldTicketNumber ?? (tenant as any).ghlFieldTicketNumber ?? "",
+                        ghlFieldDescription: ghlForm.ghlFieldDescription ?? (tenant as any).ghlFieldDescription ?? "",
+                        ghlFieldPriority: ghlForm.ghlFieldPriority ?? (tenant as any).ghlFieldPriority ?? "",
+                        ghlFieldProduct: ghlForm.ghlFieldProduct ?? (tenant as any).ghlFieldProduct ?? "",
+                        ghlFieldStatus: ghlForm.ghlFieldStatus ?? (tenant as any).ghlFieldStatus ?? "",
+                        ghlFieldTicketUrl: ghlForm.ghlFieldTicketUrl ?? (tenant as any).ghlFieldTicketUrl ?? "",
+                        ghlFieldLoomUrl: ghlForm.ghlFieldLoomUrl ?? (tenant as any).ghlFieldLoomUrl ?? "",
+                      });
+                    }}
+                    disabled={saveGhlConfig.isPending}
+                  >
+                    {saveGhlConfig.isPending ? "Saving..." : "Save Custom Field Keys"}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
