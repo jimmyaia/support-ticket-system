@@ -97,10 +97,53 @@ export async function updateUserRole(userId: number, role: "user" | "admin" | "s
   await db.update(users).set({ role }).where(eq(users.id, userId));
 }
 
-export async function updateUserTenant(userId: number, tenantId: number | null) {
+  export async function updateUserTenant(userId: number, tenantId: number | null) {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ tenantId: tenantId ?? undefined } as any).where(eq(users.id, userId));
+}
+
+/** Create a global staff member (tenantId = null, role = staff) */
+export async function createGlobalStaff(data: {
+  firstName: string;
+  lastName: string;
+  email: string;
+}): Promise<User> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await getUserByEmail(data.email);
+  if (existing) throw new Error("A user with this email already exists");
+  const name = `${data.firstName.trim()} ${data.lastName.trim()}`.trim();
+  await db.insert(users).values({
+    name,
+    email: data.email.toLowerCase().trim(),
+    passwordHash: null,
+    role: "staff",
+    tenantId: null,
+    loginMethod: "invite",
+    lastSignedIn: new Date(),
+  } as any);
+  const created = await getUserByEmail(data.email);
+  if (!created) throw new Error("Failed to create staff member");
+  return created;
+}
+
+/** Get all global staff (tenantId = null, role = staff) */
+export async function getGlobalStaff() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(users)
+    .where(and(eq(users.role, "staff"), sql`${users.tenantId} IS NULL`))
+    .orderBy(asc(users.name));
+}
+
+/** Delete a user by ID */
+export async function deleteUser(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(users).where(eq(users.id, userId));
 }
 
 export async function updateUserPassword(userId: number, passwordHash: string) {

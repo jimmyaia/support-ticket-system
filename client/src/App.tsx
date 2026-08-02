@@ -23,6 +23,7 @@ import TenantList from "./pages/superadmin/TenantList";
 import CreateTenant from "./pages/superadmin/CreateTenant";
 import TenantDetail from "./pages/superadmin/TenantDetail";
 import GlobalSearch from "./pages/superadmin/GlobalSearch";
+import GlobalStaff from "./pages/superadmin/GlobalStaff";
 
 function Router() {
   return (
@@ -59,6 +60,9 @@ function Router() {
       </Route>
       <Route path="/superadmin/search">
         {() => <GlobalSearch />}
+      </Route>
+      <Route path="/superadmin/staff">
+        {() => <GlobalStaff />}
       </Route>
 
       <Route path="/404" component={NotFound} />

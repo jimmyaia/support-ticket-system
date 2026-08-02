@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
   ChevronRight,
   Home,
   Search,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation as useWouterLocation } from "wouter";
@@ -55,6 +56,7 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
   const navItems = [
     { href: "/superadmin", label: "Overview", icon: LayoutDashboard },
     { href: "/superadmin/tenants", label: "Client Tenants", icon: Building2 },
+    { href: "/superadmin/staff", label: "Global Staff", icon: Users },
     { href: "/superadmin/search", label: "Global Search", icon: Search },
   ];
 
