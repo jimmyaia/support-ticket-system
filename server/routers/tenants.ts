@@ -22,6 +22,7 @@ import { hashPassword, createSessionToken, getRealUser } from "../_core/authServ
 import { protectedProcedure, router } from "../_core/trpc";
 import { IMPERSONATE_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
+import { getGhlPipelines } from "../ghl";
 
 // Only super-admins (role=admin, no tenantId) can manage tenants
 const superAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -213,6 +214,15 @@ export const tenantsRouter = router({
         ghlWebhookNewTicket: z.boolean().optional(),
         ghlWebhookStatusChange: z.boolean().optional(),
         ghlWebhookAssignment: z.boolean().optional(),
+        ghlLocationId: z.string().max(100).optional(),
+        ghlPipelineId: z.string().max(100).optional(),
+        ghlStageNew: z.string().max(100).optional(),
+        ghlStageInProgress: z.string().max(100).optional(),
+        ghlStageStuck: z.string().max(100).optional(),
+        ghlStageCompleted: z.string().max(100).optional(),
+        ghlStageClosed: z.string().max(100).optional(),
+        ghlSendEmail: z.boolean().optional(),
+        ghlSendSms: z.boolean().optional(),
         internalNotes: z.string().optional(),
       })
     )
@@ -324,6 +334,53 @@ export const tenantsRouter = router({
     }),
 
   // Public: resolve tenant by slug (for portal routing)
+
+  // Super admin: fetch GHL pipelines for a tenant (for onboarding UI)
+  getGhlPipelines: superAdminProcedure
+    .input(z.object({ tenantId: z.number().int() }))
+    .query(async ({ input }) => {
+      const tenant = await getTenantById(input.tenantId);
+      if (!tenant) throw new TRPCError({ code: "NOT_FOUND", message: "Tenant not found" });
+      if (!tenant.ghlApiKey || !tenant.ghlLocationId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "GHL API key and Location ID must be configured before fetching pipelines.",
+        });
+      }
+      try {
+        const pipelines = await getGhlPipelines(tenant.ghlApiKey, tenant.ghlLocationId);
+        return { pipelines };
+      } catch (err: any) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: err?.message ?? "Failed to fetch GHL pipelines",
+        });
+      }
+    }),
+
+  // Super admin: save GHL config (API key, location, pipeline, stage mapping)
+  saveGhlConfig: superAdminProcedure
+    .input(
+      z.object({
+        tenantId: z.number().int(),
+        ghlApiKey: z.string().min(1).max(500),
+        ghlLocationId: z.string().min(1).max(100),
+        ghlPipelineId: z.string().min(1).max(100),
+        ghlStageNew: z.string().max(100).optional(),
+        ghlStageInProgress: z.string().max(100).optional(),
+        ghlStageStuck: z.string().max(100).optional(),
+        ghlStageCompleted: z.string().max(100).optional(),
+        ghlStageClosed: z.string().max(100).optional(),
+        ghlSendEmail: z.boolean().default(true),
+        ghlSendSms: z.boolean().default(true),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { tenantId, ...data } = input;
+      await updateTenant(tenantId, data as any);
+      return { success: true };
+    }),
+
   getBySlug: protectedProcedure
     .input(z.object({ slug: z.string() }))
     .query(async ({ input }) => {

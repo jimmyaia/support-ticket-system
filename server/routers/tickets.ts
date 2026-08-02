@@ -15,9 +15,18 @@ import {
   updateTicketStatus,
 } from "../db";
 import { getTenantBySlug } from "../db";
+import { updateTicketGhlIds } from "../db";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { fireWebhook, buildStatusPageUrl } from "../ghlWebhook";
 import { ENV } from "../_core/env";
+import {
+  upsertGhlContact,
+  createGhlOpportunity,
+  updateGhlOpportunityStage,
+  sendGhlEmail,
+  sendGhlSms,
+  buildGhlNotificationMessages,
+} from "../ghl";
 
 async function getPresignedPutUrl(filename: string): Promise<{ uploadUrl: string; publicUrl: string }> {
   const forgeUrl = (ENV.forgeApiUrl ?? "").replace(/\/+$/, "");
@@ -83,6 +92,29 @@ export const ticketsRouter = router({
             customer: { name: ticket.name, email: ticket.email, phone: ticket.phone },
             statusPageUrl: buildStatusPageUrl(tenant.slug, ticket.ticketNumber),
           }, ticket.id).catch(console.error);
+          // GHL API: upsert contact + create opportunity + send notification
+          if (tenant.ghlApiKey && tenant.ghlLocationId) {
+            (async () => {
+              try {
+                const contactId = await upsertGhlContact(tenant.ghlApiKey!, tenant.ghlLocationId!, {
+                  name: ticket.name, email: ticket.email, phone: ticket.phone ?? undefined,
+                });
+                let opportunityId: string | undefined;
+                if (tenant.ghlPipelineId && tenant.ghlStageNew) {
+                  opportunityId = await createGhlOpportunity(tenant.ghlApiKey!, tenant.ghlLocationId!, {
+                    contactId, pipelineId: tenant.ghlPipelineId, stageId: tenant.ghlStageNew,
+                    name: `[${ticket.ticketNumber}] ${ticket.subject}`,
+                  });
+                }
+                await updateTicketGhlIds(ticket.id, { ghlContactId: contactId, ghlOpportunityId: opportunityId });
+                const msgs = buildGhlNotificationMessages("new", { name: ticket.name, ticketNumber: ticket.ticketNumber, subject: ticket.subject, statusPageUrl: buildStatusPageUrl(tenant.slug, ticket.ticketNumber) });
+                if (msgs && contactId) {
+                  if (tenant.ghlSendEmail) await sendGhlEmail(tenant.ghlApiKey!, tenant.ghlLocationId!, { contactId, toEmail: ticket.email, subject: msgs.subject, body: msgs.emailHtml });
+                  if (tenant.ghlSendSms && ticket.phone) await sendGhlSms(tenant.ghlApiKey!, tenant.ghlLocationId!, { contactId, toPhone: ticket.phone, message: msgs.smsText });
+                }
+              } catch (err) { console.error("[GHL] Error on ticket submit:", err); }
+            })();
+          }
         }
       }
 
@@ -176,6 +208,28 @@ export const ticketsRouter = router({
             assignee: assignee ? { name: assignee.name, email: assignee.email } : null,
             statusPageUrl: buildStatusPageUrl(tenant.slug, ticket.ticketNumber),
           }, ticket.id).catch(console.error);
+          // GHL API: update opportunity stage + send status notification
+          if (tenant.ghlApiKey && tenant.ghlLocationId) {
+            (async () => {
+              try {
+                const stageMap: Record<string, string | null | undefined> = {
+                  new: tenant.ghlStageNew, in_progress: tenant.ghlStageInProgress,
+                  stuck: tenant.ghlStageStuck, completed: tenant.ghlStageCompleted, closed: tenant.ghlStageClosed,
+                };
+                const stageId = stageMap[input.status];
+                const oppStatus = input.status === "completed" ? "won" : input.status === "closed" ? "lost" : undefined;
+                if (ticket.ghlOpportunityId && stageId) {
+                  await updateGhlOpportunityStage(tenant.ghlApiKey!, ticket.ghlOpportunityId, stageId, oppStatus);
+                }
+                const msgs = buildGhlNotificationMessages(input.status, { name: ticket.name, ticketNumber: ticket.ticketNumber, subject: ticket.subject, statusPageUrl: buildStatusPageUrl(tenant.slug, ticket.ticketNumber) });
+                const contactId = ticket.ghlContactId;
+                if (msgs && contactId) {
+                  if (tenant.ghlSendEmail) await sendGhlEmail(tenant.ghlApiKey!, tenant.ghlLocationId!, { contactId, toEmail: ticket.email, subject: msgs.subject, body: msgs.emailHtml });
+                  if (tenant.ghlSendSms && ticket.phone) await sendGhlSms(tenant.ghlApiKey!, tenant.ghlLocationId!, { contactId, toPhone: ticket.phone, message: msgs.smsText });
+                }
+              } catch (err) { console.error("[GHL] Error on status change:", err); }
+            })();
+          }
         }
       }
 

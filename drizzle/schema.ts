@@ -37,6 +37,17 @@ export const tenants = mysqlTable("tenants", {
   // GoHighLevel integration
   ghlWebhookUrl: text("ghlWebhookUrl"),
   ghlApiKey: varchar("ghlApiKey", { length: 500 }),
+  ghlLocationId: varchar("ghlLocationId", { length: 100 }),     // GHL sub-account location ID
+  ghlPipelineId: varchar("ghlPipelineId", { length: 100 }),     // pipeline for support tickets
+  // Stage IDs mapped to each ticket status
+  ghlStageNew: varchar("ghlStageNew", { length: 100 }),
+  ghlStageInProgress: varchar("ghlStageInProgress", { length: 100 }),
+  ghlStageStuck: varchar("ghlStageStuck", { length: 100 }),
+  ghlStageCompleted: varchar("ghlStageCompleted", { length: 100 }),
+  ghlStageClosed: varchar("ghlStageClosed", { length: 100 }),
+  // Notification toggles
+  ghlSendEmail: boolean("ghlSendEmail").default(true).notNull(),
+  ghlSendSms: boolean("ghlSendSms").default(true).notNull(),
   ghlWebhookNewTicket: boolean("ghlWebhookNewTicket").default(true).notNull(),
   ghlWebhookStatusChange: boolean("ghlWebhookStatusChange").default(true).notNull(),
   ghlWebhookAssignment: boolean("ghlWebhookAssignment").default(true).notNull(),
@@ -78,6 +89,8 @@ export const tickets = mysqlTable("tickets", {
   assigneeId: int("assigneeId"),
   imageUrl: text("imageUrl"),
   loomUrl: varchar("loomUrl", { length: 1000 }),
+  ghlContactId: varchar("ghlContactId", { length: 100 }),        // GHL contact matched/created on submit
+  ghlOpportunityId: varchar("ghlOpportunityId", { length: 100 }), // GHL opportunity created on submit
   resolvedAt: timestamp("resolvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

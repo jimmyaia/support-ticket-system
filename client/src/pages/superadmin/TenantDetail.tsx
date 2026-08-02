@@ -58,7 +58,42 @@ export default function TenantDetail() {
     ghlWebhookNewTicket?: boolean;
     ghlWebhookStatusChange?: boolean;
     ghlWebhookAssignment?: boolean;
+    ghlLocationId?: string;
+    ghlPipelineId?: string;
+    ghlStageNew?: string;
+    ghlStageInProgress?: string;
+    ghlStageStuck?: string;
+    ghlStageCompleted?: string;
+    ghlStageClosed?: string;
+    ghlSendEmail?: boolean;
+    ghlSendSms?: boolean;
   }>({});
+  const [pipelineData, setPipelineData] = useState<{ id: string; name: string; stages: { id: string; name: string }[] }[]>([]);
+  const [fetchingPipelines, setFetchingPipelines] = useState(false);
+  const getPipelines = trpc.tenants.getGhlPipelines.useQuery(
+    { tenantId },
+    { enabled: false }
+  );
+  const saveGhlConfig = trpc.tenants.saveGhlConfig.useMutation({
+    onSuccess: () => { toast.success("GHL pipeline config saved"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const handleFetchPipelines = async () => {
+    setFetchingPipelines(true);
+    try {
+      const result = await getPipelines.refetch();
+      if (result.data?.pipelines) {
+        setPipelineData(result.data.pipelines);
+        toast.success(`Loaded ${result.data.pipelines.length} pipeline(s) from GHL`);
+      }
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to fetch pipelines");
+    } finally {
+      setFetchingPipelines(false);
+    }
+  };
+  const selectedPipeline = pipelineData.find(p => p.id === (ghlForm.ghlPipelineId ?? tenant.ghlPipelineId));
+  const stageOptions = selectedPipeline?.stages ?? [];
 
   const [settingsForm, setSettingsForm] = useState<{
     name?: string;
@@ -243,13 +278,22 @@ export default function TenantDetail() {
                   <p className="text-xs text-muted-foreground">In GHL: Automations → Webhooks → Create Webhook → copy URL here</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>API Key (optional)</Label>
+                  <Label>API Key</Label>
                   <Input
                     type="password"
                     defaultValue={tenant.ghlApiKey ?? ""}
                     placeholder="GHL sub-account API key"
                     onChange={e => setGhlForm(p => ({ ...p, ghlApiKey: e.target.value }))}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Location ID</Label>
+                  <Input
+                    defaultValue={(tenant as any).ghlLocationId ?? ""}
+                    placeholder="GHL sub-account location ID"
+                    onChange={e => setGhlForm(p => ({ ...p, ghlLocationId: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">Found in GHL: Settings → Business Profile → Location ID</p>
                 </div>
 
                 <Separator />
@@ -290,6 +334,125 @@ export default function TenantDetail() {
                     Save GHL Settings
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* GHL Pipeline & Stage Mapping */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  Pipeline & Stage Mapping
+                </CardTitle>
+                <CardDescription>
+                  Map each ticket status to a GHL opportunity stage. Save the API key and Location ID above first, then click "Fetch Pipelines".
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleFetchPipelines}
+                    disabled={fetchingPipelines || (!tenant.ghlApiKey && !ghlForm.ghlApiKey) || (!tenant.ghlLocationId && !ghlForm.ghlLocationId)}
+                    className="gap-2"
+                  >
+                    {fetchingPipelines ? "Fetching..." : "Fetch Pipelines from GHL"}
+                  </Button>
+                  {pipelineData.length > 0 && (
+                    <span className="text-xs text-emerald-600 font-medium">{pipelineData.length} pipeline(s) loaded</span>
+                  )}
+                </div>
+                {pipelineData.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Pipeline</Label>
+                      <select
+                        className="w-full border rounded-md px-3 py-2 text-sm bg-background"
+                        value={ghlForm.ghlPipelineId ?? tenant.ghlPipelineId ?? ""}
+                        onChange={e => setGhlForm(p => ({ ...p, ghlPipelineId: e.target.value, ghlStageNew: undefined, ghlStageInProgress: undefined, ghlStageStuck: undefined, ghlStageCompleted: undefined, ghlStageClosed: undefined }))}
+                      >
+                        <option value="">Select a pipeline...</option>
+                        {pipelineData.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                      </select>
+                    </div>
+                    {stageOptions.length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-sm font-medium">Stage Mapping</p>
+                        {[
+                          { key: "ghlStageNew" as const, dbKey: "ghlStageNew", label: "New", color: "bg-blue-500/10 text-blue-700" },
+                          { key: "ghlStageInProgress" as const, dbKey: "ghlStageInProgress", label: "In Progress", color: "bg-yellow-500/10 text-yellow-700" },
+                          { key: "ghlStageStuck" as const, dbKey: "ghlStageStuck", label: "Stuck", color: "bg-red-500/10 text-red-700" },
+                          { key: "ghlStageCompleted" as const, dbKey: "ghlStageCompleted", label: "Completed", color: "bg-emerald-500/10 text-emerald-700" },
+                          { key: "ghlStageClosed" as const, dbKey: "ghlStageClosed", label: "Closed", color: "bg-gray-500/10 text-gray-700" },
+                        ].map(({ key, dbKey, label, color }) => (
+                          <div key={key} className="flex items-center gap-3">
+                            <span className={`text-xs font-semibold px-2 py-1 rounded w-28 text-center ${color}`}>{label}</span>
+                            <select
+                              className="flex-1 border rounded-md px-3 py-2 text-sm bg-background"
+                              value={ghlForm[key] ?? (tenant as any)[dbKey] ?? ""}
+                              onChange={e => setGhlForm(p => ({ ...p, [key]: e.target.value }))}
+                            >
+                              <option value="">— No stage —</option>
+                              {stageOptions.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <Separator />
+                    <div>
+                      <p className="text-sm font-medium mb-3">Notification Channels</p>
+                      <div className="space-y-3">
+                        {[
+                          { key: "ghlSendEmail" as const, dbKey: "ghlSendEmail", label: "Send Email via GHL", desc: "Sends an email to the customer on every status change" },
+                          { key: "ghlSendSms" as const, dbKey: "ghlSendSms", label: "Send SMS via GHL", desc: "Sends an SMS to the customer on every status change (requires phone number)" },
+                        ].map(({ key, dbKey, label, desc }) => (
+                          <div key={key} className="flex items-center justify-between p-3 rounded-lg border">
+                            <div>
+                              <p className="text-sm font-medium">{label}</p>
+                              <p className="text-xs text-muted-foreground">{desc}</p>
+                            </div>
+                            <Switch
+                              defaultChecked={(tenant as any)[dbKey] ?? true}
+                              onCheckedChange={v => setGhlForm(p => ({ ...p, [key]: v }))}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-end pt-2">
+                      <Button
+                        onClick={() => {
+                          const cfg = {
+                            tenantId,
+                            ghlApiKey: ghlForm.ghlApiKey ?? tenant.ghlApiKey ?? "",
+                            ghlLocationId: ghlForm.ghlLocationId ?? tenant.ghlLocationId ?? "",
+                            ghlPipelineId: ghlForm.ghlPipelineId ?? tenant.ghlPipelineId ?? "",
+                            ghlStageNew: ghlForm.ghlStageNew ?? tenant.ghlStageNew ?? undefined,
+                            ghlStageInProgress: ghlForm.ghlStageInProgress ?? tenant.ghlStageInProgress ?? undefined,
+                            ghlStageStuck: ghlForm.ghlStageStuck ?? tenant.ghlStageStuck ?? undefined,
+                            ghlStageCompleted: ghlForm.ghlStageCompleted ?? tenant.ghlStageCompleted ?? undefined,
+                            ghlStageClosed: ghlForm.ghlStageClosed ?? tenant.ghlStageClosed ?? undefined,
+                            ghlSendEmail: ghlForm.ghlSendEmail ?? (tenant as any).ghlSendEmail ?? true,
+                            ghlSendSms: ghlForm.ghlSendSms ?? (tenant as any).ghlSendSms ?? true,
+                          };
+                          if (!cfg.ghlApiKey || !cfg.ghlLocationId || !cfg.ghlPipelineId) {
+                            toast.error("API key, Location ID, and Pipeline are required");
+                            return;
+                          }
+                          saveGhlConfig.mutate(cfg);
+                        }}
+                        disabled={saveGhlConfig.isPending}
+                      >
+                        {saveGhlConfig.isPending ? "Saving..." : "Save Pipeline Config"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {pipelineData.length === 0 && (tenant.ghlPipelineId) && (
+                  <div className="p-3 rounded-lg border bg-muted/40 text-sm text-muted-foreground">
+                    Pipeline already configured (ID: {tenant.ghlPipelineId}). Click "Fetch Pipelines" to update the mapping.
+                  </div>
+                )}
               </CardContent>
             </Card>
 
