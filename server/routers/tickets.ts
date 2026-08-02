@@ -17,6 +17,23 @@ import {
 import { getTenantBySlug } from "../db";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { fireWebhook, buildStatusPageUrl } from "../ghlWebhook";
+import { ENV } from "../_core/env";
+
+async function getPresignedPutUrl(filename: string): Promise<{ uploadUrl: string; publicUrl: string }> {
+  const forgeUrl = (ENV.forgeApiUrl ?? "").replace(/\/+$/, "");
+  const forgeKey = ENV.forgeApiKey ?? "";
+  const hash = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
+  const ext = filename.includes(".") ? filename.slice(filename.lastIndexOf(".")) : "";
+  const key = `ticket-attachments/${hash}${ext}`;
+  const presignUrl = new URL("v1/storage/presign/put", forgeUrl + "/");
+  presignUrl.searchParams.set("path", key);
+  const resp = await fetch(presignUrl.toString(), {
+    headers: { Authorization: `Bearer ${forgeKey}` },
+  });
+  if (!resp.ok) throw new Error(`Presign failed: ${resp.status}`);
+  const { url } = (await resp.json()) as { url: string };
+  return { uploadUrl: url, publicUrl: `/manus-storage/${key}` };
+}
 
 const staffOrAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin" && ctx.user.role !== "staff") {
@@ -253,5 +270,16 @@ export const ticketsRouter = router({
       const tenant = await getTenantBySlug(input.slug);
       if (!tenant || !tenant.isActive) return [];
       return getTenantProducts(tenant.id);
+    }),
+
+  // Public: get a presigned S3 PUT URL for ticket image attachments (client-side upload)
+  getUploadUrl: publicProcedure
+    .input(z.object({ filename: z.string().min(1).max(255), contentType: z.string().min(1).max(100) }))
+    .mutation(async ({ input }) => {
+      const allowed = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+      if (!allowed.includes(input.contentType)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Only image files are allowed." });
+      }
+      return getPresignedPutUrl(input.filename);
     }),
 });

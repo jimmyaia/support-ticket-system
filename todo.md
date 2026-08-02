@@ -138,3 +138,4 @@
 - [x] Worker route set: *.aia-supportdesk.com/* → aiasupportdesk-proxy
 - [x] useSubdomain hook bug fixed — now correctly detects slug from hostname
 - [x] TicketConfirmation updated to link to /status on subdomains vs /check-status on root
+- [x] Add screenshot image upload (drag-and-drop area, 5 MB limit, presigned S3 PUT) and Loom video URL field to TenantPortal.tsx (subdomain portal form). Added getUploadUrl public tRPC procedure to tickets router.

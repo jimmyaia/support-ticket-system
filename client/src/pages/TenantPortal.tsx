@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Building2, Send, AlertTriangle, Search } from "lucide-react";
+import { Building2, Send, AlertTriangle, Search, Paperclip, Video, X } from "lucide-react";
 import { Link } from "wouter";
 
 const schema = z.object({
@@ -24,6 +24,7 @@ const schema = z.object({
   description: z.string().min(10, "Please describe the issue (min 10 characters)").max(10000),
   priority: z.enum(["low", "medium", "high", "urgent"]),
 });
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 type FormData = z.infer<typeof schema>;
 
 interface Props {
@@ -34,6 +35,11 @@ export default function TenantPortal({ slug }: Props) {
   const [, navigate] = useLocation();
   const [product, setProduct] = useState("");
   const [priority, setPriority] = useState<"low" | "medium" | "high" | "urgent">("medium");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [loomUrl, setLoomUrl] = useState("");
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: tenant, isLoading: tenantLoading } = trpc.tickets.getTenantInfoBySlug.useQuery(
     { slug },
@@ -50,14 +56,64 @@ export default function TenantPortal({ slug }: Props) {
     defaultValues: { priority: "medium" },
   });
 
+  const uploadImage = trpc.tickets.getUploadUrl.useMutation();
+
   const submit = trpc.tickets.submit.useMutation({
     onSuccess: (data) => navigate(`/ticket-submitted/${data.ticketNumber}`),
     onError: (e) => toast.error(e.message),
   });
 
-  const onSubmit = (data: FormData) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    setImageError(null);
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setImageError("Only image files are allowed.");
+      return;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      setImageError("Image must be under 5 MB.");
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const onSubmit = async (data: FormData) => {
     if (!tenant) return;
-    submit.mutate({ ...data, tenantId: tenant.id });
+    let imageUrl: string | undefined;
+
+    if (imageFile) {
+      try {
+        const { uploadUrl, publicUrl } = await uploadImage.mutateAsync({
+          filename: imageFile.name,
+          contentType: imageFile.type,
+        });
+        await fetch(uploadUrl, {
+          method: "PUT",
+          body: imageFile,
+          headers: { "Content-Type": imageFile.type },
+        });
+        imageUrl = publicUrl;
+      } catch {
+        toast.error("Failed to upload image. Please try again.");
+        return;
+      }
+    }
+
+    submit.mutate({
+      ...data,
+      tenantId: tenant.id,
+      loomUrl: loomUrl.trim() || undefined,
+      imageUrl,
+    });
   };
 
   // Unknown or inactive tenant
@@ -77,6 +133,8 @@ export default function TenantPortal({ slug }: Props) {
       </div>
     );
   }
+
+  const isSubmitting = submit.isPending || uploadImage.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
@@ -189,9 +247,69 @@ export default function TenantPortal({ slug }: Props) {
                 {errors.description && <p className="text-xs text-destructive">{errors.description.message}</p>}
               </div>
 
-              <Button type="submit" disabled={submit.isPending || tenantLoading || !tenant} className="w-full gap-2">
+              {/* Attachments section */}
+              <div className="border border-border/50 rounded-xl p-4 space-y-4 bg-muted/20">
+                <p className="text-sm font-medium text-foreground">Attachments <span className="text-xs text-muted-foreground font-normal">(optional)</span></p>
+
+                {/* Image upload */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-1.5 text-sm">
+                    <Paperclip className="w-3.5 h-3.5" />
+                    Screenshot / Image
+                  </Label>
+                  {imagePreview ? (
+                    <div className="relative inline-block">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="max-h-40 rounded-lg border border-border object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={clearImage}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-white flex items-center justify-center hover:bg-destructive/80 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed border-border rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Paperclip className="w-5 h-5 text-muted-foreground mx-auto mb-1.5" />
+                      <p className="text-sm text-muted-foreground">Click to upload a screenshot</p>
+                      <p className="text-xs text-muted-foreground/60 mt-0.5">PNG, JPG, GIF up to 5 MB</p>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  {imageError && <p className="text-xs text-destructive">{imageError}</p>}
+                </div>
+
+                {/* Loom URL */}
+                <div className="space-y-1.5">
+                  <Label className="flex items-center gap-1.5 text-sm">
+                    <Video className="w-3.5 h-3.5" />
+                    Loom Video URL
+                  </Label>
+                  <Input
+                    placeholder="https://www.loom.com/share/..."
+                    value={loomUrl}
+                    onChange={(e) => setLoomUrl(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Paste a Loom link to include a screen recording with your ticket.</p>
+                </div>
+              </div>
+
+              <Button type="submit" disabled={isSubmitting || tenantLoading || !tenant} className="w-full gap-2">
                 <Send className="w-4 h-4" />
-                {submit.isPending ? "Submitting..." : "Submit Ticket"}
+                {isSubmitting ? "Submitting..." : "Submit Ticket"}
               </Button>
             </form>
           </CardContent>
