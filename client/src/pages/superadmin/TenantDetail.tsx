@@ -522,18 +522,11 @@ export default function TenantDetail() {
                   <Button
                     size="sm"
                     onClick={() => {
-                      const apiKey = ghlForm.ghlApiKey ?? tenant.ghlApiKey ?? "";
-                      const locationId = ghlForm.ghlLocationId ?? (tenant as any).ghlLocationId ?? "";
-                      const pipelineId = ghlForm.ghlPipelineId ?? tenant.ghlPipelineId ?? "";
-                      if (!apiKey || !locationId || !pipelineId) {
-                        toast.error("Save the API key, Location ID, and Pipeline first");
-                        return;
-                      }
                       saveGhlConfig.mutate({
                         tenantId,
-                        ghlApiKey: apiKey,
-                        ghlLocationId: locationId,
-                        ghlPipelineId: pipelineId,
+                        ghlApiKey: ghlForm.ghlApiKey ?? tenant.ghlApiKey ?? "",
+                        ghlLocationId: ghlForm.ghlLocationId ?? (tenant as any).ghlLocationId ?? "",
+                        ghlPipelineId: ghlForm.ghlPipelineId ?? tenant.ghlPipelineId ?? "",
                         ghlSendEmail: ghlForm.ghlSendEmail ?? tenant.ghlSendEmail ?? true,
                         ghlSendSms: ghlForm.ghlSendSms ?? tenant.ghlSendSms ?? true,
                         ghlFieldTicketNumber: ghlForm.ghlFieldTicketNumber ?? (tenant as any).ghlFieldTicketNumber ?? "",
