@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { StatusBadge, PriorityBadge } from "@/components/TicketBadges";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, ChevronUp, Loader2, Search, TicketIcon } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp, Loader2, Search, TicketIcon, X } from "lucide-react";
 
 type SortField = "createdAt" | "updatedAt" | "priority" | "status";
 type SortDir = "asc" | "desc";
@@ -13,27 +15,24 @@ type SortDir = "asc" | "desc";
 export default function AdminTickets() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [priorityFilter, setPriorityFilter] = useState<string>("");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState(""); // debounced
   const [sortBy, setSortBy] = useState<SortField>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  // Debounce: only fire the server query 350ms after the user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput), 350);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const { data: tickets, isLoading } = trpc.tickets.list.useQuery({
     status: statusFilter || undefined,
     priority: priorityFilter || undefined,
+    search: search || undefined,
     sortBy,
     sortDir,
   });
-
-  const filtered = tickets?.filter((t) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      t.ticketNumber.toLowerCase().includes(q) ||
-      t.subject.toLowerCase().includes(q) ||
-      t.name.toLowerCase().includes(q) ||
-      t.email.toLowerCase().includes(q)
-    );
-  }) ?? [];
 
   const toggleSort = (field: SortField) => {
     if (sortBy === field) {
@@ -49,18 +48,38 @@ export default function AdminTickets() {
     return sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />;
   };
 
+  const hasFilters = !!statusFilter || !!priorityFilter || !!searchInput;
+
+  const clearFilters = () => {
+    setStatusFilter("");
+    setPriorityFilter("");
+    setSearchInput("");
+    setSearch("");
+  };
+
+  const ticketList = tickets ?? [];
+
   return (
     <AdminLayout title="Tickets">
       {/* Filters */}
       <div className="flex flex-wrap gap-3 mb-6">
-        <div className="relative flex-1 min-w-48">
+        <div className="relative flex-1 min-w-52">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search tickets..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by ticket #, subject, name or email…"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             className="pl-9 bg-white"
           />
+          {searchInput && (
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => { setSearchInput(""); setSearch(""); }}
+              aria-label="Clear search"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
         <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
           <SelectTrigger className="w-40 bg-white">
@@ -87,7 +106,43 @@ export default function AdminTickets() {
             <SelectItem value="urgent">Urgent</SelectItem>
           </SelectContent>
         </Select>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1.5 text-muted-foreground">
+            <X className="w-3.5 h-3.5" />
+            Clear filters
+          </Button>
+        )}
       </div>
+
+      {/* Active filter chips */}
+      {hasFilters && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {searchInput && (
+            <Badge variant="secondary" className="gap-1.5 pr-1.5">
+              Search: "{searchInput}"
+              <button onClick={() => { setSearchInput(""); setSearch(""); }} className="hover:text-foreground transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {statusFilter && (
+            <Badge variant="secondary" className="gap-1.5 pr-1.5">
+              Status: {statusFilter.replace("_", " ")}
+              <button onClick={() => setStatusFilter("")} className="hover:text-foreground transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+          {priorityFilter && (
+            <Badge variant="secondary" className="gap-1.5 pr-1.5">
+              Priority: {priorityFilter}
+              <button onClick={() => setPriorityFilter("")} className="hover:text-foreground transition-colors">
+                <X className="w-3 h-3" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-border/60 shadow-sm overflow-hidden">
@@ -131,15 +186,22 @@ export default function AdminTickets() {
                     <Loader2 className="w-5 h-5 animate-spin text-muted-foreground mx-auto" />
                   </td>
                 </tr>
-              ) : filtered.length === 0 ? (
+              ) : ticketList.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-12">
                     <TicketIcon className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">No tickets found</p>
+                    <p className="text-sm text-muted-foreground">
+                      {hasFilters ? "No tickets match your search" : "No tickets yet"}
+                    </p>
+                    {hasFilters && (
+                      <button onClick={clearFilters} className="mt-2 text-xs text-primary hover:underline">
+                        Clear filters
+                      </button>
+                    )}
                   </td>
                 </tr>
               ) : (
-                filtered.map((ticket) => (
+                ticketList.map((ticket) => (
                   <tr key={ticket.id} className="border-b border-border/30 last:border-0 hover:bg-muted/20 transition-colors">
                     <td className="px-5 py-3.5">
                       <Link href={`/admin/tickets/${ticket.id}`}>
@@ -162,7 +224,7 @@ export default function AdminTickets() {
                     <td className="px-5 py-3.5"><PriorityBadge priority={ticket.priority} /></td>
                     <td className="px-5 py-3.5">
                       <span className="text-xs text-muted-foreground">
-                        {ticket.assigneeId ? `#${ticket.assigneeId}` : "Unassigned"}
+                        {(ticket as any).assigneeName ?? (ticket.assigneeId ? `Staff #${ticket.assigneeId}` : "Unassigned")}
                       </span>
                     </td>
                     <td className="px-5 py-3.5">
@@ -176,9 +238,13 @@ export default function AdminTickets() {
             </tbody>
           </table>
         </div>
-        {!isLoading && filtered.length > 0 && (
-          <div className="px-5 py-3 border-t border-border/30 bg-muted/20">
-            <p className="text-xs text-muted-foreground">{filtered.length} ticket{filtered.length !== 1 ? "s" : ""}</p>
+        {!isLoading && ticketList.length > 0 && (
+          <div className="px-5 py-3 border-t border-border/30 bg-muted/20 flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              {ticketList.length} ticket{ticketList.length !== 1 ? "s" : ""}
+              {hasFilters ? " matching filters" : ""}
+            </p>
+            {isLoading && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
           </div>
         )}
       </div>

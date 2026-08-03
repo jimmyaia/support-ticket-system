@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertTicket,
@@ -332,17 +332,42 @@ export async function listTickets(filters: TicketFilters = {}) {
       conditions.push(eq(tickets.assigneeId, filters.assigneeId));
     }
   }
+  if (filters.search && filters.search.trim()) {
+    const q = `%${filters.search.trim()}%`;
+    conditions.push(or(like(tickets.ticketNumber, q), like(tickets.subject, q), like(tickets.name, q), like(tickets.email, q)));
+  }
 
   const orderCol = filters.sortBy ?? "createdAt";
   const orderDir = filters.sortDir ?? "desc";
   const col = tickets[orderCol as keyof typeof tickets] as any;
   const orderFn = orderDir === "asc" ? asc : desc;
 
-  const query = db.select().from(tickets);
-  if (conditions.length > 0) query.where(and(...conditions));
-  query.orderBy(orderFn(col));
+  const rows = await db
+    .select({
+      id: tickets.id,
+      ticketNumber: tickets.ticketNumber,
+      name: tickets.name,
+      email: tickets.email,
+      subject: tickets.subject,
+      description: tickets.description,
+      priority: tickets.priority,
+      status: tickets.status,
+      product: tickets.product,
+      imageUrl: tickets.imageUrl,
+      loomUrl: tickets.loomUrl,
+      assigneeId: tickets.assigneeId,
+      assigneeName: users.name,
+      tenantId: tickets.tenantId,
+      createdAt: tickets.createdAt,
+      updatedAt: tickets.updatedAt,
+      resolvedAt: tickets.resolvedAt,
+    })
+    .from(tickets)
+    .leftJoin(users, eq(tickets.assigneeId, users.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(orderFn(col));
 
-  return query;
+  return rows;
 }
 
 export async function getTicketByNumber(ticketNumber: string, tenantId?: number) {

@@ -88,8 +88,8 @@
 - [x] True subdomain routing once aia-supportdesk.com is connected — live via Cloudflare Worker
 - [ ] Self-service tenant registration flow
 - [x] Email notifications via GHL — implemented in tickets router (sendGhlEmail/sendGhlSms on status change and ticket submit)
-- [ ] Customer reply to ticket feature
-- [ ] Ticket search in admin panel
+- [x] Customer reply to ticket — removed from scope (handled in GoHighLevel)
+- [x] Ticket search in admin panel — server-side LIKE on ticket#/subject/name/email, debounced input, filter chips, assignee name display
 - [ ] Activity log per ticket
 
 ## Security & Code Quality
