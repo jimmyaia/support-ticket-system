@@ -103,9 +103,9 @@ export default function AdminReports() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 mt-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5 mt-4">
             {summaryCards.map((card) => (
-              <div key={card.label} className="bg-white rounded-xl border border-border/60 shadow-sm p-5">
+              <div key={card.label} className="bg-white rounded-xl border border-border/60 shadow-sm p-4">
                 <div className={`w-9 h-9 rounded-lg ${card.bg} flex items-center justify-center mb-3`}>
                   <card.icon className={`w-4.5 h-4.5 ${card.color}`} />
                 </div>
@@ -117,7 +117,7 @@ export default function AdminReports() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Status Breakdown Pie */}
-            <div className="bg-white rounded-xl border border-border/60 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-border/60 shadow-sm p-4 sm:p-6">
               <h2 className="text-sm font-semibold text-foreground mb-4">Status Breakdown</h2>
               {pieData.length === 0 ? (
                 <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
@@ -153,9 +153,9 @@ export default function AdminReports() {
             </div>
 
             {/* Status Table */}
-            <div className="bg-white rounded-xl border border-border/60 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-border/60 shadow-sm p-4 sm:p-6">
               <h2 className="text-sm font-semibold text-foreground mb-4">Tickets by Status</h2>
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto"><table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border/40">
                     <th className="text-left pb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
@@ -184,14 +184,14 @@ export default function AdminReports() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
         </>
       )}
 
       {/* Volume Chart */}
-      <div className="bg-white rounded-xl border border-border/60 shadow-sm p-6">
+      <div className="bg-white rounded-xl border border-border/60 shadow-sm p-4 sm:p-6">
         <h2 className="text-sm font-semibold text-foreground mb-4">Monthly Ticket Volume (Last 6 Months)</h2>
         {loadingVolume ? (
           <div className="flex items-center justify-center h-48">

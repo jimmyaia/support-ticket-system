@@ -151,3 +151,14 @@
 - [x] Save Custom Field Keys button works independently (no longer requires API key/location ID in form state)
 - [x] GHL pipeline fetch: loads live pipelines from GHL API into stage dropdowns
 - [ ] End-to-end GHL test: submit ticket → verify contact + opportunity created in GHL sub-account
+
+## Mobile Responsiveness
+
+- [x] AdminLayout: collapsible mobile sidebar with hamburger menu and overlay drawer
+- [x] Admin Tickets list: responsive table → card layout on mobile
+- [x] Admin TicketDetail: stack sidebar below main content on mobile
+- [x] Admin Dashboard: responsive stat cards and charts
+- [x] Admin Staff page: stack member rows and fix 2-col dialog form on mobile
+- [x] Admin Reports: horizontal scroll for tables, responsive charts
+- [x] Public Home page: fix nav overflow, compress hero spacing on mobile
+- [x] Public submit form: already mostly OK, minor padding tweaks

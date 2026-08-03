@@ -193,7 +193,7 @@ export default function Home() {
 
       {/* ── NAV ─────────────────────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-sm">
               <HeadphonesIcon className="w-4 h-4 text-primary-foreground" />
@@ -210,7 +210,8 @@ export default function Home() {
             <a href={DEMO_CALENDAR_URL} target="_blank" rel="noopener noreferrer">
               <Button variant="outline" size="sm" className="gap-1.5 bg-white border-slate-200 text-slate-700 hover:bg-slate-50">
                 <Calendar className="w-3.5 h-3.5" />
-                Book a Demo
+                <span className="hidden sm:inline">Book a Demo</span>
+                <span className="sm:hidden">Demo</span>
               </Button>
             </a>
             <a href={STRIPE_PAYMENT_URL} target="_blank" rel="noopener noreferrer">
@@ -226,15 +227,15 @@ export default function Home() {
       {/* ── HERO ────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-gradient-to-b from-slate-50 to-white">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
-        <div className="relative max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
-          <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-xs font-semibold tracking-widest uppercase bg-primary/8 text-primary border-primary/20">
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-24 pb-12 sm:pb-20 text-center overflow-hidden">
+          <Badge variant="secondary" className="mb-5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase bg-primary/8 text-primary border-primary/20 max-w-full text-center">
             The only support system built for GHL agencies
           </Badge>
-          <h1 className="font-display text-5xl md:text-6xl font-semibold text-slate-900 leading-[1.08] mb-6 text-balance max-w-4xl mx-auto">
+          <h1 className="font-display text-3xl sm:text-5xl md:text-6xl font-semibold text-slate-900 leading-[1.08] mb-5 text-balance max-w-4xl mx-auto">
             Voice. Chat. Form.<br />
             <span className="text-primary italic">Every customer, every channel.</span>
           </h1>
-          <p className="text-xl text-slate-500 leading-relaxed mb-8 max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-slate-500 leading-relaxed mb-6 max-w-2xl mx-auto">
             Your customers can call, text, WhatsApp, or fill out a form — and every single one creates a support ticket automatically.
             <strong className="text-slate-700"> $149/month. No contracts. Fully set up for you in 48 hours.</strong>
           </p>
@@ -264,13 +265,13 @@ export default function Home() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
             <a href={STRIPE_PAYMENT_URL} target="_blank" rel="noopener noreferrer">
-              <Button size="lg" className="gap-2 px-10 h-14 text-base font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
+              <Button size="lg" className="gap-2 w-full sm:w-auto px-8 sm:px-10 h-12 sm:h-14 text-sm sm:text-base font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow">
                 <CreditCard className="w-4 h-4" />
                 Start for $149/month
               </Button>
             </a>
             <a href={DEMO_CALENDAR_URL} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="lg" className="gap-2 px-10 h-14 text-base bg-white border-slate-200 text-slate-700 hover:bg-slate-50">
+              <Button variant="outline" size="lg" className="gap-2 w-full sm:w-auto px-8 sm:px-10 h-12 sm:h-14 text-sm sm:text-base bg-white border-slate-200 text-slate-700 hover:bg-slate-50">
                 <Calendar className="w-4 h-4" />
                 Schedule a Free Demo
               </Button>
@@ -288,7 +289,7 @@ export default function Home() {
       </section>
 
       {/* ── PROBLEM / AGITATION ─────────────────────────────────────────────── */}
-      <section className="bg-slate-900 text-white py-20">
+      <section className="bg-slate-900 text-white py-12 sm:py-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-6 leading-tight">
             Your competitors only offer a form.<br />

@@ -49,9 +49,9 @@ export default function AdminDashboard() {
   return (
     <AdminLayout title="Dashboard">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-border/60 shadow-sm p-5">
+          <div key={stat.label} className="bg-white rounded-xl border border-border/60 shadow-sm p-4">
             <div className={`w-9 h-9 rounded-lg ${stat.bg} flex items-center justify-center mb-3`}>
               <stat.icon className={`w-4.5 h-4.5 ${stat.color}`} />
             </div>
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
 
       {/* Recent Tickets */}
       <div className="bg-white rounded-xl border border-border/60 shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-border/50">
           <h2 className="font-semibold text-foreground">Recent Tickets</h2>
           <Link href="/admin/tickets">
             <span className="text-sm text-primary hover:underline flex items-center gap-1 cursor-pointer">
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
           <div className="divide-y divide-border/50">
             {recentTickets.map((ticket) => (
               <Link key={ticket.id} href={`/admin/tickets/${ticket.id}`}>
-                <div className="flex items-center gap-4 px-6 py-4 hover:bg-muted/30 transition-colors cursor-pointer">
+                <div className="flex items-center gap-3 px-4 sm:px-6 py-3.5 hover:bg-muted/30 transition-colors cursor-pointer">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-mono text-xs text-muted-foreground">{ticket.ticketNumber}</span>
@@ -92,7 +92,7 @@ export default function AdminDashboard() {
                       <PriorityBadge priority={ticket.priority} />
                     </div>
                     <p className="text-sm font-medium text-foreground truncate">{ticket.subject}</p>
-                    <p className="text-xs text-muted-foreground">{ticket.name} · {ticket.email}</p>
+                    <p className="text-xs text-muted-foreground"><span>{ticket.name}</span><span className="hidden sm:inline"> · {ticket.email}</span></p>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs text-muted-foreground">{new Date(ticket.createdAt).toLocaleDateString()}</p>

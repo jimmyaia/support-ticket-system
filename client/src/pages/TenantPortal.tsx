@@ -139,7 +139,7 @@ export default function TenantPortal({ slug }: Props) {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
       {/* Header */}
       <header className="bg-white dark:bg-slate-900 border-b shadow-sm">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
             {tenantLoading ? (
               <Skeleton className="w-10 h-10 rounded-xl" />
@@ -169,7 +169,7 @@ export default function TenantPortal({ slug }: Props) {
       </header>
 
       {/* Form */}
-      <main className="max-w-3xl mx-auto px-6 py-10">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl">Submit a Support Request</CardTitle>

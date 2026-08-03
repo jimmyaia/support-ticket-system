@@ -81,7 +81,7 @@ export default function AdminTicketDetail({ params }: Props) {
   return (
     <AdminLayout>
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-6">
+      <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
         <div>
           <Link href="/admin/tickets">
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground -ml-2 mb-3">
@@ -98,18 +98,18 @@ export default function AdminTicketDetail({ params }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main content */}
-        <div className="lg:col-span-2 space-y-5">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Sidebar - shown first on mobile, right on desktop */}
+        <div className="space-y-4 order-first lg:order-last lg:col-start-3">
           {/* Description */}
-          <div className="bg-white rounded-xl border border-border/60 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-border/60 shadow-sm p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">Description</h2>
             <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{ticket.description}</p>
           </div>
 
           {/* Attachments */}
           {(ticket.imageUrl || ticket.loomUrl) && (
-            <div className="bg-white rounded-xl border border-border/60 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-border/60 shadow-sm p-4 sm:p-6">
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4">Attachments</h2>
               <div className="space-y-3">
                 {ticket.imageUrl && (
@@ -145,7 +145,7 @@ export default function AdminTicketDetail({ params }: Props) {
           )}
 
           {/* Internal Notes */}
-          <div className="bg-white rounded-xl border border-border/60 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-border/60 shadow-sm p-4 sm:p-6">
             <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
               <MessageSquare className="w-4 h-4" />
               Internal Notes
@@ -210,8 +210,8 @@ export default function AdminTicketDetail({ params }: Props) {
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-4">
+        {/* Main content */}
+        <div className="lg:col-span-2 space-y-5 order-last lg:order-first">
           {/* Status */}
           <div className="bg-white rounded-xl border border-border/60 shadow-sm p-5">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Status</h3>

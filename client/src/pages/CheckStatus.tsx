@@ -56,7 +56,7 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
   return (
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border/50 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer">
               {tenantInfo?.logoUrl ? (
@@ -77,7 +77,7 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
         </div>
       </nav>
 
-      <div className="max-w-xl mx-auto px-6 py-12">
+      <div className="max-w-xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Link href="/">
           <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground mb-8 -ml-2">
             <ArrowLeft className="w-4 h-4" />
@@ -145,7 +145,7 @@ const PRIORITY_CONFIG: Record<string, { label: string; color: string }> = {
               </div>
             </div>
             {(data.status === "completed" || data.status === "closed") && (
-              <div className="px-6 pb-6">
+              <div className="px-4 sm:px-6 pb-4 sm:pb-6">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
                   <p className="text-sm font-medium text-green-700">
                     {data.status === "completed" ? "✓ Your issue has been resolved." : "✓ This ticket has been closed."}

@@ -94,7 +94,7 @@ export default function AdminStaff() {
   return (
     <AdminLayout title="Staff Management">
       <div className="bg-white rounded-xl border border-border/60 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-border/50 flex flex-col sm:flex-row sm:items-center gap-3">
           <p className="text-sm text-muted-foreground">Manage your support team. Admins can add, remove, and change roles.</p>
           {isAdmin && (
             <Button onClick={() => setAddOpen(true)} size="sm" className="gap-2">
@@ -123,7 +123,7 @@ export default function AdminStaff() {
         ) : (
           <div className="divide-y divide-border/40">
             {staffList.map((member) => (
-              <div key={member.id} className="flex items-center gap-4 px-6 py-4">
+              <div key={member.id} className="flex items-center gap-3 px-4 sm:px-6 py-4 flex-wrap">
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <span className="text-sm font-semibold text-primary">{initials(member.name, member.email)}
                   </span>
@@ -178,7 +178,7 @@ export default function AdminStaff() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label htmlFor="sa-fn">First Name <span className="text-destructive">*</span></Label>
                 <Input id="sa-fn" placeholder="Jane" value={form.firstName}

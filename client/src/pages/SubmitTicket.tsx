@@ -120,7 +120,7 @@ type FormData = z.infer<typeof schema>;
     <div className="min-h-screen bg-background">
       {/* Nav */}
       <nav className="border-b border-border/50 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer">
               {tenantInfo?.logoUrl ? (
@@ -141,7 +141,7 @@ type FormData = z.infer<typeof schema>;
         </div>
       </nav>
 
-      <div className="max-w-2xl mx-auto px-6 py-12">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Link href="/">
           <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground mb-8 -ml-2">
             <ArrowLeft className="w-4 h-4" />
