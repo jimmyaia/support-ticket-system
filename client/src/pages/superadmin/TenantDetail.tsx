@@ -109,7 +109,7 @@ export default function TenantDetail() {
       setFetchingPipelines(false);
     }
   };
-  const selectedPipeline = pipelineData.find(p => p.id === (ghlForm.ghlPipelineId ?? tenant.ghlPipelineId));
+  const selectedPipeline = pipelineData.find(p => p.id === (ghlForm.ghlPipelineId ?? data?.tenant?.ghlPipelineId));
   const stageOptions = selectedPipeline?.stages ?? [];
 
   const [settingsForm, setSettingsForm] = useState<{
@@ -128,6 +128,22 @@ export default function TenantDetail() {
     onError: (e) => toast.error(e.message),
   });
 
+  // Sync saved GHL custom field keys from DB into controlled form state on load
+  useEffect(() => {
+    if (!data?.tenant) return;
+    const t = data.tenant as any;
+    setGhlForm(p => ({
+      ...p,
+      ghlFieldTicketNumber: t.ghlFieldTicketNumber ?? "",
+      ghlFieldDescription: t.ghlFieldDescription ?? "",
+      ghlFieldPriority: t.ghlFieldPriority ?? "",
+      ghlFieldProduct: t.ghlFieldProduct ?? "",
+      ghlFieldStatus: t.ghlFieldStatus ?? "",
+      ghlFieldTicketUrl: t.ghlFieldTicketUrl ?? "",
+      ghlFieldLoomUrl: t.ghlFieldLoomUrl ?? "",
+    }));
+  }, [data?.tenant?.id]);
+
   if (isLoading) {
     return (
       <div className="p-8 max-w-5xl mx-auto space-y-4">
@@ -140,22 +156,6 @@ export default function TenantDetail() {
   if (!data) return <div className="p-8">Tenant not found</div>;
 
   const { tenant, products, webhookLogs } = data;
-
-  // Sync saved GHL custom field keys from DB into controlled form state on load
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    setGhlForm(p => ({
-      ...p,
-      ghlFieldTicketNumber: (tenant as any).ghlFieldTicketNumber ?? "",
-      ghlFieldDescription: (tenant as any).ghlFieldDescription ?? "",
-      ghlFieldPriority: (tenant as any).ghlFieldPriority ?? "",
-      ghlFieldProduct: (tenant as any).ghlFieldProduct ?? "",
-      ghlFieldStatus: (tenant as any).ghlFieldStatus ?? "",
-      ghlFieldTicketUrl: (tenant as any).ghlFieldTicketUrl ?? "",
-      ghlFieldLoomUrl: (tenant as any).ghlFieldLoomUrl ?? "",
-    }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenant.id]);
   const ghlConnected = !!tenant.ghlWebhookUrl;
   const currentSlug = slugValue || tenant.slug;
 
