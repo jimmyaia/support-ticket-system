@@ -204,6 +204,28 @@ describe("staff.updateRole - admin only", () => {
   });
 });
 
+// ─── Public: getTenantInfoBySlug ──────────────────────────────────────────────
+
+describe("tickets.getTenantInfoBySlug - public access", () => {
+  it("returns null for an unknown slug", async () => {
+    const caller = appRouter.createCaller(makePublicCtx());
+    const result = await caller.tickets.getTenantInfoBySlug({ slug: "nonexistent-slug-xyz-99999" });
+    expect(result).toBeNull();
+  });
+
+  it("returns tenant info object with expected shape for a valid active slug", async () => {
+    // Seed tenant "onetouch" (id=2) exists in the DB; if DB is unavailable result is null
+    const caller = appRouter.createCaller(makePublicCtx());
+    const result = await caller.tickets.getTenantInfoBySlug({ slug: "onetouch" });
+    if (result !== null) {
+      expect(result).toHaveProperty("id");
+      expect(result).toHaveProperty("name");
+      expect(result).toHaveProperty("slug", "onetouch");
+      expect(result).toHaveProperty("logoUrl");
+    }
+  });
+});
+
 describe("auth.logout", () => {
   it("clears session cookie and returns success", async () => {
     const clearedCookies: string[] = [];

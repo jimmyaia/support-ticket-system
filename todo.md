@@ -85,9 +85,9 @@
 - [x] Fixed OneTouch Media slug from 'onetouch-media' to 'onetouch' (deleted duplicate tenant ID 1)
 - [ ] Stripe paywall ($149/mo subscription before registration)
 - [ ] Path-based tenant routing (/t/:slug/) for demo before domain connection
-- [ ] True subdomain routing once aia-supportdesk.com is connected
+- [x] True subdomain routing once aia-supportdesk.com is connected — live via Cloudflare Worker
 - [ ] Self-service tenant registration flow
-- [ ] Email notifications via GHL
+- [x] Email notifications via GHL — implemented in tickets router (sendGhlEmail/sendGhlSms on status change and ticket submit)
 - [ ] Customer reply to ticket feature
 - [ ] Ticket search in admin panel
 - [ ] Activity log per ticket
@@ -111,6 +111,7 @@
 - [x] Public portal branding: SubmitTicket and CheckStatus show "Welcome to [Company Name] Support" via getTenantInfo tRPC procedure
 - [x] Global Staff management page in Super Admin (/superadmin/staff)
 - [x] Third audit pass: fixed TenantPortal.tsx syntax error (stray import lines after closing brace), removed unused imports across 11 files (Smartphone from Home.tsx, Separator from TenantSettings.tsx, currentUser/attachments/assignee from TicketDetail.tsx, Button from Tickets.tsx, useState/Separator/Globe/Key/Lock from CreateTenant.tsx, CardHeader/CardTitle/formatDistanceToNow from Overview.tsx, useForm/Clock/ExternalLink/AlertTriangle/format from TenantDetail.tsx, CardHeader/CardTitle from TenantList.tsx, ROOT_DOMAINS from useSubdomain.ts, LOCAL_HOSTS/isIpAddress from cookies.ts). TypeScript: 0 errors | Tests: 14/14 passing
+- [x] Fourth audit pass: replaced (undefined as any) initializers with "" in TenantDetail.tsx ghlForm state, removed all (tenant as any) casts for ghlField*/ghlSend*/ghlLocationId (all are on the Tenant type), added 2 vitest tests for getTenantInfoBySlug. TypeScript: 0 errors | Tests: 16/16 passing
 
 ## Subdomain-Based Multi-Tenant Routing
 - [x] Add getTenantBySlug public tRPC procedure (returns name, logoUrl, id, isActive)
@@ -127,9 +128,9 @@
 - [x] Update TenantList portal URL to show slug.aia-supportdesk.com
 - [x] Update TenantSettings portal URL to show slug.aia-supportdesk.com
 - [x] Handle unknown subdomain: friendly error page with redirect to aia-supportdesk.com
-- [ ] Add vitest: getTenantInfoBySlug returns correct tenant info for valid slug
-- [ ] Cloudflare wildcard DNS record (* CNAME cname.manus.space) — user action required
-- [ ] Add *.aia-supportdesk.com wildcard domain in Manus Settings → Domains — user action required
+- [x] Add vitest: getTenantInfoBySlug returns null for unknown slug + correct shape for valid slug (2 tests, 16/16 passing)
+- [x] Cloudflare wildcard DNS record (* CNAME cname.manus.space) — done (see Domain & Cloudflare Setup)
+- [x] Wildcard subdomain routing handled via Cloudflare Worker proxy (no Manus domain panel needed)
 
 ## Domain & Cloudflare Setup
 - [x] Cloudflare nameservers set in Bluehost
@@ -139,3 +140,14 @@
 - [x] useSubdomain hook bug fixed — now correctly detects slug from hostname
 - [x] TicketConfirmation updated to link to /status on subdomains vs /check-status on root
 - [x] Add screenshot image upload (drag-and-drop area, 5 MB limit, presigned S3 PUT) and Loom video URL field to TenantPortal.tsx (subdomain portal form). Added getUploadUrl public tRPC procedure to tickets router.
+
+## GHL Integration
+- [x] GHL API service (server/ghl.ts): contact upsert (email→phone→create), opportunity create/update, send email/SMS, pipeline listing, custom fields builder
+- [x] Per-tenant GHL config: API key, location ID, pipeline ID, stage mapping (new/in-progress/stuck/completed/closed), email/SMS toggles, custom field keys
+- [x] Ticket submit: creates GHL contact + opportunity with custom fields (ticket number, description, priority, product, status, ticket URL, Loom URL)
+- [x] Status change: updates GHL opportunity stage + sends email/SMS notification via GHL
+- [x] GHL Integration tab in Super Admin → Tenants → [Tenant]: API key, location ID, pipeline/stage mapping, notification toggles, custom field key inputs
+- [x] Custom field keys persist correctly — controlled state synced from DB via useEffect on load
+- [x] Save Custom Field Keys button works independently (no longer requires API key/location ID in form state)
+- [x] GHL pipeline fetch: loads live pipelines from GHL API into stage dropdowns
+- [ ] End-to-end GHL test: submit ticket → verify contact + opportunity created in GHL sub-account

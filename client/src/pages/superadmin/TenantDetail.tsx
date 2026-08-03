@@ -75,13 +75,13 @@ export default function TenantDetail() {
     ghlFieldTicketUrl?: string;
     ghlFieldLoomUrl?: string;
   }>({
-    ghlFieldTicketNumber: (undefined as any),
-    ghlFieldDescription: (undefined as any),
-    ghlFieldPriority: (undefined as any),
-    ghlFieldProduct: (undefined as any),
-    ghlFieldStatus: (undefined as any),
-    ghlFieldTicketUrl: (undefined as any),
-    ghlFieldLoomUrl: (undefined as any),
+    ghlFieldTicketNumber: "",
+    ghlFieldDescription: "",
+    ghlFieldPriority: "",
+    ghlFieldProduct: "",
+    ghlFieldStatus: "",
+    ghlFieldTicketUrl: "",
+    ghlFieldLoomUrl: "",
   });
 
 
@@ -131,7 +131,7 @@ export default function TenantDetail() {
   // Sync saved GHL custom field keys from DB into controlled form state on load
   useEffect(() => {
     if (!data?.tenant) return;
-    const t = data.tenant as any;
+    const t = data.tenant;
     setGhlForm(p => ({
       ...p,
       ghlFieldTicketNumber: t.ghlFieldTicketNumber ?? "",
@@ -322,7 +322,7 @@ export default function TenantDetail() {
                 <div className="space-y-2">
                   <Label>Location ID</Label>
                   <Input
-                    defaultValue={(tenant as any).ghlLocationId ?? ""}
+                    defaultValue={tenant.ghlLocationId ?? ""}
                     placeholder="GHL sub-account location ID"
                     onChange={e => setGhlForm(p => ({ ...p, ghlLocationId: e.target.value }))}
                   />
@@ -421,7 +421,7 @@ export default function TenantDetail() {
                             <span className={`text-xs font-semibold px-2 py-1 rounded w-28 text-center ${color}`}>{label}</span>
                             <select
                               className="flex-1 border rounded-md px-3 py-2 text-sm bg-background"
-                              value={ghlForm[key] ?? (tenant as any)[dbKey] ?? ""}
+                              value={ghlForm[key] ?? (tenant[dbKey as keyof typeof tenant] as string) ?? ""}
                               onChange={e => setGhlForm(p => ({ ...p, [key]: e.target.value }))}
                             >
                               <option value="">— No stage —</option>
@@ -445,7 +445,7 @@ export default function TenantDetail() {
                               <p className="text-xs text-muted-foreground">{desc}</p>
                             </div>
                             <Switch
-                              defaultChecked={(tenant as any)[dbKey] ?? true}
+                            defaultChecked={(tenant[dbKey as keyof typeof tenant] as boolean) ?? true}
                               onCheckedChange={v => setGhlForm(p => ({ ...p, [key]: v }))}
                             />
                           </div>
@@ -465,8 +465,8 @@ export default function TenantDetail() {
                             ghlStageStuck: ghlForm.ghlStageStuck ?? tenant.ghlStageStuck ?? undefined,
                             ghlStageCompleted: ghlForm.ghlStageCompleted ?? tenant.ghlStageCompleted ?? undefined,
                             ghlStageClosed: ghlForm.ghlStageClosed ?? tenant.ghlStageClosed ?? undefined,
-                            ghlSendEmail: ghlForm.ghlSendEmail ?? (tenant as any).ghlSendEmail ?? true,
-                            ghlSendSms: ghlForm.ghlSendSms ?? (tenant as any).ghlSendSms ?? true,
+                            ghlSendEmail: ghlForm.ghlSendEmail ?? tenant.ghlSendEmail ?? true,
+                            ghlSendSms: ghlForm.ghlSendSms ?? tenant.ghlSendSms ?? true,
                           };
                           if (!cfg.ghlApiKey || !cfg.ghlLocationId || !cfg.ghlPipelineId) {
                             toast.error("API key, Location ID, and Pipeline are required");
@@ -525,17 +525,17 @@ export default function TenantDetail() {
                       saveGhlConfig.mutate({
                         tenantId,
                         ghlApiKey: ghlForm.ghlApiKey ?? tenant.ghlApiKey ?? "",
-                        ghlLocationId: ghlForm.ghlLocationId ?? (tenant as any).ghlLocationId ?? "",
+                        ghlLocationId: ghlForm.ghlLocationId ?? tenant.ghlLocationId ?? "",
                         ghlPipelineId: ghlForm.ghlPipelineId ?? tenant.ghlPipelineId ?? "",
                         ghlSendEmail: ghlForm.ghlSendEmail ?? tenant.ghlSendEmail ?? true,
                         ghlSendSms: ghlForm.ghlSendSms ?? tenant.ghlSendSms ?? true,
-                        ghlFieldTicketNumber: ghlForm.ghlFieldTicketNumber ?? (tenant as any).ghlFieldTicketNumber ?? "",
-                        ghlFieldDescription: ghlForm.ghlFieldDescription ?? (tenant as any).ghlFieldDescription ?? "",
-                        ghlFieldPriority: ghlForm.ghlFieldPriority ?? (tenant as any).ghlFieldPriority ?? "",
-                        ghlFieldProduct: ghlForm.ghlFieldProduct ?? (tenant as any).ghlFieldProduct ?? "",
-                        ghlFieldStatus: ghlForm.ghlFieldStatus ?? (tenant as any).ghlFieldStatus ?? "",
-                        ghlFieldTicketUrl: ghlForm.ghlFieldTicketUrl ?? (tenant as any).ghlFieldTicketUrl ?? "",
-                        ghlFieldLoomUrl: ghlForm.ghlFieldLoomUrl ?? (tenant as any).ghlFieldLoomUrl ?? "",
+                        ghlFieldTicketNumber: ghlForm.ghlFieldTicketNumber ?? tenant.ghlFieldTicketNumber ?? "",
+                        ghlFieldDescription: ghlForm.ghlFieldDescription ?? tenant.ghlFieldDescription ?? "",
+                        ghlFieldPriority: ghlForm.ghlFieldPriority ?? tenant.ghlFieldPriority ?? "",
+                        ghlFieldProduct: ghlForm.ghlFieldProduct ?? tenant.ghlFieldProduct ?? "",
+                        ghlFieldStatus: ghlForm.ghlFieldStatus ?? tenant.ghlFieldStatus ?? "",
+                        ghlFieldTicketUrl: ghlForm.ghlFieldTicketUrl ?? tenant.ghlFieldTicketUrl ?? "",
+                        ghlFieldLoomUrl: ghlForm.ghlFieldLoomUrl ?? tenant.ghlFieldLoomUrl ?? "",
                       });
                     }}
                     disabled={saveGhlConfig.isPending}
