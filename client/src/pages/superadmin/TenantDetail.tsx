@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,17 @@ export default function TenantDetail() {
     ghlFieldStatus?: string;
     ghlFieldTicketUrl?: string;
     ghlFieldLoomUrl?: string;
-  }>({});
+  }>({
+    ghlFieldTicketNumber: (undefined as any),
+    ghlFieldDescription: (undefined as any),
+    ghlFieldPriority: (undefined as any),
+    ghlFieldProduct: (undefined as any),
+    ghlFieldStatus: (undefined as any),
+    ghlFieldTicketUrl: (undefined as any),
+    ghlFieldLoomUrl: (undefined as any),
+  });
+
+
   const [pipelineData, setPipelineData] = useState<{ id: string; name: string; stages: { id: string; name: string }[] }[]>([]);
   const [fetchingPipelines, setFetchingPipelines] = useState(false);
   const getPipelines = trpc.tenants.getGhlPipelines.useQuery(
@@ -130,6 +140,22 @@ export default function TenantDetail() {
   if (!data) return <div className="p-8">Tenant not found</div>;
 
   const { tenant, products, webhookLogs } = data;
+
+  // Sync saved GHL custom field keys from DB into controlled form state on load
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    setGhlForm(p => ({
+      ...p,
+      ghlFieldTicketNumber: (tenant as any).ghlFieldTicketNumber ?? "",
+      ghlFieldDescription: (tenant as any).ghlFieldDescription ?? "",
+      ghlFieldPriority: (tenant as any).ghlFieldPriority ?? "",
+      ghlFieldProduct: (tenant as any).ghlFieldProduct ?? "",
+      ghlFieldStatus: (tenant as any).ghlFieldStatus ?? "",
+      ghlFieldTicketUrl: (tenant as any).ghlFieldTicketUrl ?? "",
+      ghlFieldLoomUrl: (tenant as any).ghlFieldLoomUrl ?? "",
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenant.id]);
   const ghlConnected = !!tenant.ghlWebhookUrl;
   const currentSlug = slugValue || tenant.slug;
 
@@ -487,7 +513,7 @@ export default function TenantDetail() {
                     <Input
                       className="h-8 text-xs"
                       placeholder="GHL custom field ID"
-                      defaultValue={(tenant as any)[key] ?? ""}
+                      value={(ghlForm[key] as string) ?? ""}
                       onChange={e => setGhlForm(p => ({ ...p, [key]: e.target.value }))}
                     />
                   </div>
