@@ -28,7 +28,7 @@ type PasswordForm = z.infer<typeof passwordSchema>;
 
 export default function AdminProfile() {
   const { user } = useAuth();
-  const hasPassword = !!(user as any)?.passwordHash;
+  const hasPassword = !!user?.passwordHash;
 
   const {
     register,
@@ -77,9 +77,9 @@ export default function AdminProfile() {
             <div className="pt-2 border-t border-border/50">
               <p className="text-xs text-muted-foreground">
                 Login method: <span className="font-medium text-foreground capitalize">
-                  {(user as any)?.loginMethod === "google" ? "Google OAuth" : "Email & Password"}
+                  {user?.loginMethod === "google" ? "Google OAuth" : "Email & Password"}
                 </span>
-                {(user as any)?.loginMethod === "google" && !hasPassword && (
+                {user?.loginMethod === "google" && !hasPassword && (
                   <span className="ml-2 text-amber-600">— Set a password below to also enable email login</span>
                 )}
               </p>

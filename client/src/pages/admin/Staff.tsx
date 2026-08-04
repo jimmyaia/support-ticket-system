@@ -137,7 +137,7 @@ export default function AdminStaff() {
                 {isAdmin && member.id !== currentUser?.id ? (
                   <Select
                     value={member.role}
-                    onValueChange={(v) => updateRoleMutation.mutate({ userId: member.id, role: v as any })}
+                    onValueChange={(v) => updateRoleMutation.mutate({ userId: member.id, role: v as "user"|"admin"|"staff" })}
                     disabled={updateRoleMutation.isPending}
                   >
                     <SelectTrigger className="w-28 h-8 text-xs">

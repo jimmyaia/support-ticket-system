@@ -35,7 +35,7 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
     );
   }
 
-  if (!user || user.role !== "admin" || (user as any).tenantId !== null) {
+  if (!user || user.role !== "admin" || user.tenantId !== null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

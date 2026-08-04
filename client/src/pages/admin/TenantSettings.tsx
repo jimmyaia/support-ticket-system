@@ -37,9 +37,9 @@ type SettingsForm = z.infer<typeof settingsSchema>;
 
 export default function TenantSettings() {
   const { user } = useAuth();
-  const tenantId = (user as any)?.tenantId as number | null;
+  const tenantId = user?.tenantId ?? null;
   const [newProduct, setNewProduct] = useState("");
-  const hasPassword = !!(user as any)?.passwordHash;
+  const hasPassword = !!user?.passwordHash;
 
   const { data: tenant, isLoading: tenantLoading, refetch: refetchTenant } = trpc.tenants.getMyTenant.useQuery(undefined, {
     enabled: !!tenantId,

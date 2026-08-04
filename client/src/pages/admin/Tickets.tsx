@@ -179,7 +179,7 @@ export default function AdminTickets() {
                   <p className="font-medium text-foreground text-sm leading-snug mb-1">{ticket.subject}</p>
                   <p className="text-xs text-muted-foreground mb-3">{ticket.name} · {ticket.email}</p>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{(ticket as any).assigneeName ?? (ticket.assigneeId ? `Staff #${ticket.assigneeId}` : "Unassigned")}</span>
+                    <span>{ticket.assigneeName ?? (ticket.assigneeId ? `Staff #${ticket.assigneeId}` : "Unassigned")}</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {new Date(ticket.createdAt).toLocaleDateString()}
@@ -233,7 +233,7 @@ export default function AdminTickets() {
                       <td className="px-5 py-3.5"><PriorityBadge priority={ticket.priority} /></td>
                       <td className="px-5 py-3.5">
                         <span className="text-xs text-muted-foreground">
-                          {(ticket as any).assigneeName ?? (ticket.assigneeId ? `Staff #${ticket.assigneeId}` : "Unassigned")}
+                          {ticket.assigneeName ?? (ticket.assigneeId ? `Staff #${ticket.assigneeId}` : "Unassigned")}
                         </span>
                       </td>
                       <td className="px-5 py-3.5">

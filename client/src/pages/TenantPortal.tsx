@@ -199,7 +199,7 @@ export default function TenantPortal({ slug }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Priority <span className="text-destructive">*</span></Label>
-                  <Select value={priority} onValueChange={(v) => { setPriority(v as any); setValue("priority", v as any); }}>
+                  <Select value={priority} onValueChange={(v) => { setPriority(v as "low"|"medium"|"high"|"urgent"); setValue("priority", v as "low"|"medium"|"high"|"urgent"); }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="low">Low</SelectItem>

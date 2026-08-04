@@ -100,7 +100,7 @@ export async function updateUserRole(userId: number, role: "user" | "admin" | "s
   export async function updateUserTenant(userId: number, tenantId: number | null) {
   const db = await getDb();
   if (!db) return;
-  await db.update(users).set({ tenantId: tenantId ?? undefined } as any).where(eq(users.id, userId));
+  await db.update(users).set({ tenantId: tenantId ?? null }).where(eq(users.id, userId));
 }
 
 /** Create a global staff member (tenantId = null, role = staff) */
@@ -149,7 +149,7 @@ export async function deleteUser(userId: number) {
 export async function updateUserPassword(userId: number, passwordHash: string) {
   const db = await getDb();
   if (!db) return;
-  await db.update(users).set({ passwordHash, loginMethod: "email" } as any).where(eq(users.id, userId));
+  await db.update(users).set({ passwordHash, loginMethod: "email" }).where(eq(users.id, userId));
 }
 
 // ─── Tenants ──────────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ export async function getTenantBySlug(slug: string): Promise<Tenant | undefined>
 export async function updateTenant(id: number, data: Partial<InsertTenant>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(tenants).set(data as any).where(eq(tenants.id, id));
+  await db.update(tenants).set(data as Partial<typeof tenants.$inferInsert>).where(eq(tenants.id, id));
 }
 
 export async function deleteTenant(id: number) {
@@ -241,7 +241,7 @@ export async function addTenantProduct(data: InsertTenantProduct) {
 export async function updateTenantProduct(id: number, data: Partial<InsertTenantProduct>) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(tenantProducts).set(data as any).where(eq(tenantProducts.id, id));
+  await db.update(tenantProducts).set(data as Partial<typeof tenantProducts.$inferInsert>).where(eq(tenantProducts.id, id));
 }
 
 export async function deleteTenantProduct(id: number) {
@@ -322,8 +322,8 @@ export async function listTickets(filters: TicketFilters = {}) {
 
   const conditions: any[] = [];
   if (filters.tenantId !== undefined) conditions.push(eq(tickets.tenantId, filters.tenantId));
-  if (filters.status) conditions.push(eq(tickets.status, filters.status as any));
-  if (filters.priority) conditions.push(eq(tickets.priority, filters.priority as any));
+  if (filters.status) conditions.push(eq(tickets.status, filters.status as "new"|"in_progress"|"stuck"|"completed"|"closed"));
+  if (filters.priority) conditions.push(eq(tickets.priority, filters.priority as "low"|"medium"|"high"|"urgent"));
   if (filters.product) conditions.push(eq(tickets.product, filters.product));
   if (filters.assigneeId !== undefined) {
     if (filters.assigneeId === null) {
@@ -397,13 +397,13 @@ export async function updateTicketStatus(
   const resolvedAt = status === "completed" || status === "closed" ? new Date() : null;
   const updateData: Record<string, unknown> = { status };
   if (resolvedAt) updateData.resolvedAt = resolvedAt;
-  await db.update(tickets).set(updateData as any).where(eq(tickets.id, id));
+  await db.update(tickets).set(updateData as Partial<typeof tickets.$inferInsert>).where(eq(tickets.id, id));
 }
 
 export async function assignTicket(id: number, assigneeId: number | null) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(tickets).set({ assigneeId: assigneeId ?? undefined } as any).where(eq(tickets.id, id));
+  await db.update(tickets).set({ assigneeId: assigneeId ?? null }).where(eq(tickets.id, id));
 }
 
 export async function updateTicketGhlIds(

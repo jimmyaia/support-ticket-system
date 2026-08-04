@@ -205,7 +205,7 @@ type FormData = z.infer<typeof schema>;
             </div>
             <div className="space-y-1.5">
               <Label>Priority</Label>
-              <Select defaultValue="medium" onValueChange={(v) => setValue("priority", v as any)}>
+              <Select defaultValue="medium" onValueChange={(v) => setValue("priority", v as "low"|"medium"|"high"|"urgent")}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

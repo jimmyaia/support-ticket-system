@@ -217,7 +217,7 @@ export default function AdminTicketDetail({ params }: Props) {
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Status</h3>
             <Select
               value={ticket.status}
-              onValueChange={(v) => updateStatusMutation.mutate({ id: ticketId, status: v as any })}
+              onValueChange={(v) => updateStatusMutation.mutate({ id: ticketId, status: v as "new"|"in_progress"|"stuck"|"completed"|"closed" })}
               disabled={updateStatusMutation.isPending}
             >
               <SelectTrigger className="w-full">
@@ -264,7 +264,7 @@ export default function AdminTicketDetail({ params }: Props) {
               {[
                 { label: "Submitted by", value: ticket.name },
                 { label: "Email", value: ticket.email },
-                { label: "Product", value: (ticket as any).product === "go_highlevel" ? "GoHighLevel" : (ticket as any).product === "amply" ? "Amply" : "—" },
+                { label: "Product", value: ticket.product === "go_highlevel" ? "GoHighLevel" : ticket.product === "amply" ? "Amply" : "—" },
                 { label: "Created", value: new Date(ticket.createdAt).toLocaleString() },
                 { label: "Last Updated", value: new Date(ticket.updatedAt).toLocaleString() },
                 ...(ticket.resolvedAt ? [{ label: "Resolved", value: new Date(ticket.resolvedAt).toLocaleString() }] : []),

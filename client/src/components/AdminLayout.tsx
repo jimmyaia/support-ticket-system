@@ -86,7 +86,7 @@ function SidebarContent({
             </Link>
           );
         })}
-        {user?.role === "admin" && (user as any).tenantId && TENANT_ADMIN_NAV.map((item) => {
+        {user?.role === "admin" && user.tenantId && TENANT_ADMIN_NAV.map((item) => {
           const isActive = location.startsWith(item.href);
           return (
             <Link key={item.href} href={item.href} onClick={onNavigate}>
@@ -113,7 +113,7 @@ function SidebarContent({
             {user?.role}
           </span>
         </div>
-        {user?.role === "admin" && !(user as any).tenantId && (
+        {user?.role === "admin" && !user.tenantId && (
           <Link href="/superadmin" onClick={onNavigate}>
             <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-violet-600 hover:bg-violet-50 transition-colors cursor-pointer mb-1">
               <Shield className="w-4 h-4" />
