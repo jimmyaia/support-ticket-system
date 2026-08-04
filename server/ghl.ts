@@ -118,6 +118,21 @@ export async function upsertGhlContact(
 
   if (!createResp.ok) {
     const err = await createResp.text();
+    // GHL "prevent duplicate contacts" returns 400 with the existing contactId in the body.
+    // Extract and use it instead of failing the whole sync.
+    if (createResp.status === 400) {
+      try {
+        const errBody = JSON.parse(err) as { contactId?: string; meta?: { contactId?: string } };
+        const existingId = errBody.contactId ?? errBody.meta?.contactId;
+        if (existingId) {
+          console.log(`[GHL] Duplicate contact detected, using existing contactId: ${existingId}`);
+          await updateGhlContact(apiKey, existingId, data);
+          return existingId;
+        }
+      } catch {
+        // JSON parse failed — fall through to throw
+      }
+    }
     throw new Error(`GHL create contact failed: ${createResp.status} ${err}`);
   }
 
