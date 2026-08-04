@@ -16,6 +16,7 @@ import {
 } from "../db";
 import { getTenantBySlug } from "../db";
 import { updateTicketGhlIds } from "../db";
+import { logActivity, getTicketActivity } from "../db";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { fireWebhook, buildStatusPageUrl } from "../ghlWebhook";
 import { ENV } from "../_core/env";
@@ -128,6 +129,15 @@ export const ticketsRouter = router({
         }
       }
 
+      // Log ticket created activity (fire-and-forget)
+      logActivity({
+        ticketId: ticket.id,
+        event: "ticket.created",
+        actorId: null,
+        actorName: ticket.name,
+        meta: { subject: ticket.subject, priority: ticket.priority, product: ticket.product },
+      }).catch(() => {});
+
       return { ticketNumber: ticket.ticketNumber, id: ticket.id };
     }),
 
@@ -177,7 +187,8 @@ export const ticketsRouter = router({
       if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Ticket not found" });
       const notes = await getTicketNotes(ticket.id);
       const attachments = await getTicketAttachments(ticket.id);
-      return { ticket, notes, attachments };
+      const activity = await getTicketActivity(ticket.id);
+      return { ticket, notes, attachments, activity };
     }),
 
   // Staff/Admin: update ticket status
@@ -194,6 +205,15 @@ export const ticketsRouter = router({
       if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Ticket not found" });
       const previousStatus = ticket.status;
       await updateTicketStatus(input.id, input.status);
+
+      // Log activity
+      logActivity({
+        ticketId: input.id,
+        event: "status.changed",
+        actorId: ctx.user.id,
+        actorName: ctx.user.name ?? undefined,
+        meta: { from: previousStatus, to: input.status },
+      }).catch(() => {});
 
       // Fire GHL webhook
       if (ticket.tenantId > 0) {
@@ -265,6 +285,19 @@ export const ticketsRouter = router({
       if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Ticket not found" });
       await assignTicket(input.id, input.assigneeId);
 
+      // Log activity
+      const newAssignee = input.assigneeId ? await getUserById(input.assigneeId) : null;
+      logActivity({
+        ticketId: input.id,
+        event: "assignee.changed",
+        actorId: ctx.user.id,
+        actorName: ctx.user.name ?? undefined,
+        meta: {
+          assigneeName: newAssignee?.name ?? null,
+          assigneeId: input.assigneeId,
+        },
+      }).catch(() => {});
+
       // Fire GHL webhook
       if (ticket.tenantId > 0 && input.assigneeId) {
         const [tenant, assignee] = await Promise.all([
@@ -308,6 +341,15 @@ export const ticketsRouter = router({
         authorId: ctx.user.id,
         content: input.content,
       });
+      // Log activity
+      logActivity({
+        ticketId: input.ticketId,
+        event: "note.added",
+        actorId: ctx.user.id,
+        actorName: ctx.user.name ?? undefined,
+        meta: { preview: input.content.slice(0, 80) },
+      }).catch(() => {});
+
       return note;
     }),
 
@@ -344,6 +386,16 @@ export const ticketsRouter = router({
       const tenant = await getTenantBySlug(input.slug);
       if (!tenant || !tenant.isActive) return [];
       return getTenantProducts(tenant.id);
+    }),
+
+  // Staff/Admin: get activity log for a ticket
+  getActivity: staffOrAdminProcedure
+    .input(z.object({ ticketId: z.number().int() }))
+    .query(async ({ input, ctx }) => {
+      const tenantId = ctx.user.tenantId ?? undefined;
+      const ticket = await getTicketById(input.ticketId, tenantId);
+      if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Ticket not found" });
+      return getTicketActivity(input.ticketId);
     }),
 
   // Public: get a presigned S3 PUT URL for ticket image attachments (client-side upload)

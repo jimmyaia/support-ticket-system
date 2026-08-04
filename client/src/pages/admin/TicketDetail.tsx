@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { trpc } from "@/lib/trpc";
 import { StatusBadge, PriorityBadge } from "@/components/TicketBadges";
@@ -6,11 +6,56 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
-import { ArrowLeft, ExternalLink, Loader2, MessageSquare, Paperclip, Send, User, Video } from "lucide-react";
+import {
+  ArrowLeft, ExternalLink, Loader2, MessageSquare, Paperclip,
+  Send, User, Video, Clock, CheckCircle2, AlertCircle, UserCheck,
+  StickyNote, Tag, Activity,
+} from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
   params: { id: string };
+}
+
+type ActivityEvent = "ticket.created" | "status.changed" | "assignee.changed" | "note.added" | "attachment.added";
+
+const STATUS_LABELS: Record<string, string> = {
+  new: "New", in_progress: "In Progress", stuck: "Stuck", completed: "Completed", closed: "Closed",
+};
+
+function ActivityIcon({ event }: { event: ActivityEvent }) {
+  const cls = "w-3.5 h-3.5";
+  if (event === "ticket.created") return <Tag className={cls} />;
+  if (event === "status.changed") return <CheckCircle2 className={cls} />;
+  if (event === "assignee.changed") return <UserCheck className={cls} />;
+  if (event === "note.added") return <StickyNote className={cls} />;
+  if (event === "attachment.added") return <Paperclip className={cls} />;
+  return <AlertCircle className={cls} />;
+}
+
+function activityColor(event: ActivityEvent) {
+  if (event === "ticket.created") return "bg-blue-100 text-blue-600";
+  if (event === "status.changed") return "bg-green-100 text-green-600";
+  if (event === "assignee.changed") return "bg-purple-100 text-purple-600";
+  if (event === "note.added") return "bg-amber-100 text-amber-600";
+  return "bg-muted text-muted-foreground";
+}
+
+function activityLabel(event: ActivityEvent, meta: Record<string, unknown> | null, actorName: string | null): string {
+  const actor = actorName ?? "System";
+  if (event === "ticket.created") return `Ticket submitted by ${actor}`;
+  if (event === "status.changed") {
+    const from = STATUS_LABELS[meta?.from as string] ?? meta?.from;
+    const to = STATUS_LABELS[meta?.to as string] ?? meta?.to;
+    return `${actor} changed status from ${from} → ${to}`;
+  }
+  if (event === "assignee.changed") {
+    const name = meta?.assigneeName as string | null;
+    return name ? `${actor} assigned to ${name}` : `${actor} unassigned the ticket`;
+  }
+  if (event === "note.added") return `${actor} added a note`;
+  if (event === "attachment.added") return `${actor} added an attachment`;
+  return event;
 }
 
 export default function AdminTicketDetail({ params }: Props) {
@@ -76,7 +121,7 @@ export default function AdminTicketDetail({ params }: Props) {
     );
   }
 
-  const { ticket, notes } = data;
+  const { ticket, notes, activity } = data;
 
   return (
     <AdminLayout>
@@ -264,7 +309,7 @@ export default function AdminTicketDetail({ params }: Props) {
               {[
                 { label: "Submitted by", value: ticket.name },
                 { label: "Email", value: ticket.email },
-                { label: "Product", value: ticket.product === "go_highlevel" ? "GoHighLevel" : ticket.product === "amply" ? "Amply" : "—" },
+                { label: "Product", value: ticket.product },
                 { label: "Created", value: new Date(ticket.createdAt).toLocaleString() },
                 { label: "Last Updated", value: new Date(ticket.updatedAt).toLocaleString() },
                 ...(ticket.resolvedAt ? [{ label: "Resolved", value: new Date(ticket.resolvedAt).toLocaleString() }] : []),
@@ -275,6 +320,51 @@ export default function AdminTicketDetail({ params }: Props) {
                 </div>
               ))}
             </dl>
+          </div>
+
+          {/* Activity Log */}
+          <div className="bg-white rounded-xl border border-border/60 shadow-sm p-5">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Activity Log
+            </h3>
+
+            {!activity || activity.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Clock className="w-8 h-8 text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Events will appear here as the ticket progresses.</p>
+              </div>
+            ) : (
+              <ol className="relative border-l border-border/40 ml-3 space-y-0">
+                {activity.map((item, idx): JSX.Element => {
+                  let meta: Record<string, unknown> | null = null;
+                  try { meta = item.meta ? (JSON.parse(item.meta) as Record<string, unknown>) : null; } catch { /* ignore */ }
+                  const isLast = idx === activity.length - 1;
+                  const preview = item.event === "note.added" && meta?.preview ? String(meta.preview) : null;
+                  return (
+                    <li key={item.id} className={`ml-5 ${isLast ? "pb-0" : "pb-5"}`}>
+                      <span className={`absolute -left-[1.1rem] flex items-center justify-center w-7 h-7 rounded-full ring-4 ring-white ${activityColor(item.event as ActivityEvent)}`}>
+                        <ActivityIcon event={item.event as ActivityEvent} />
+                      </span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-3">
+                        <p className="text-sm text-foreground leading-snug">
+                          {activityLabel(item.event as ActivityEvent, meta, item.actorName ?? null)}
+                        </p>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {new Date(item.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      {preview && (
+                        <p className="text-xs text-muted-foreground mt-1 italic truncate max-w-sm">
+                          &ldquo;{preview}{preview.length >= 80 ? "…" : ""}&rdquo;
+                        </p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
           </div>
         </div>
       </div>

@@ -149,3 +149,21 @@ export const webhookLogs = mysqlTable("webhook_logs", {
 });
 
 export type WebhookLog = typeof webhookLogs.$inferSelect;
+
+// ── TICKET ACTIVITY LOG ──────────────────────────────────────────────────────
+export const ticketActivity = mysqlTable("ticket_activity", {
+  id: int("id").autoincrement().primaryKey(),
+  ticketId: int("ticketId").notNull(),
+  actorId: int("actorId"),                              // null = system
+  actorName: varchar("actorName", { length: 255 }),     // snapshot of name at log time
+  event: mysqlEnum("event", [
+    "ticket.created",
+    "status.changed",
+    "assignee.changed",
+    "note.added",
+    "attachment.added",
+  ]).notNull(),
+  meta: text("meta"),                                   // JSON string for extra context
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type TicketActivity = typeof ticketActivity.$inferSelect;

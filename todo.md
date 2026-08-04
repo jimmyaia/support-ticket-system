@@ -90,7 +90,7 @@
 - [x] Email notifications via GHL — implemented in tickets router (sendGhlEmail/sendGhlSms on status change and ticket submit)
 - [x] Customer reply to ticket — removed from scope (handled in GoHighLevel)
 - [x] Ticket search in admin panel — server-side LIKE on ticket#/subject/name/email, debounced input, filter chips, assignee name display
-- [ ] Activity log per ticket
+- [x] Activity log per ticket — timestamped timeline in ticket detail (ticket.created, status.changed, assignee.changed, note.added)
 
 ## Security & Code Quality
 - [x] Remove dead code: unused ComponentShowcase route, DashboardLayout OAuth startLogin reference, unused useRouter import

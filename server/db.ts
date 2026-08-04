@@ -14,6 +14,8 @@ import {
   users,
   User,
   Tenant,
+  ticketActivity,
+  TicketActivity,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -519,4 +521,34 @@ export async function getMonthlyVolume(months: number = 6, tenantId?: number) {
   }
 
   return results;
+}
+
+// ─── Ticket Activity Log ──────────────────────────────────────────────────────
+
+export async function logActivity(data: {
+  ticketId: number;
+  event: TicketActivity["event"];
+  actorId?: number | null;
+  actorName?: string | null;
+  meta?: Record<string, unknown>;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(ticketActivity).values({
+    ticketId: data.ticketId,
+    event: data.event,
+    actorId: data.actorId ?? null,
+    actorName: data.actorName ?? null,
+    meta: data.meta ? JSON.stringify(data.meta) : null,
+  });
+}
+
+export async function getTicketActivity(ticketId: number): Promise<TicketActivity[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(ticketActivity)
+    .where(eq(ticketActivity.ticketId, ticketId))
+    .orderBy(asc(ticketActivity.createdAt));
 }
