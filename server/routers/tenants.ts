@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { InsertTenant } from "../../drizzle/schema";
 import {
   createTenant,
   createUser,
@@ -121,10 +122,10 @@ export const tenantsRouter = router({
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user.tenantId) throw new TRPCError({ code: "FORBIDDEN", message: "Not a tenant admin" });
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-      const data: Record<string, unknown> = {};
+      const data: Partial<InsertTenant> = {};
       if (input.name !== undefined) data.name = input.name;
       if (input.logoUrl !== undefined) data.logoUrl = input.logoUrl || null;
-      await updateTenant(ctx.user.tenantId, data as any);
+      await updateTenant(ctx.user.tenantId, data);
       return { success: true };
     }),
 
@@ -384,7 +385,7 @@ export const tenantsRouter = router({
     )
     .mutation(async ({ input }) => {
       const { tenantId, ...data } = input;
-      await updateTenant(tenantId, data as any);
+      await updateTenant(tenantId, data as Partial<InsertTenant>);
       return { success: true };
     }),
 

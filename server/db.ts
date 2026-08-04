@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gte, like, lte, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
+  InsertUser,
   InsertTicket,
   InsertTicketNote,
   InsertTenant,
@@ -120,11 +121,11 @@ export async function createGlobalStaff(data: {
     name,
     email: data.email.toLowerCase().trim(),
     passwordHash: null,
-    role: "staff",
+    role: "staff" as const,
     tenantId: null,
-    loginMethod: "invite",
+    loginMethod: "invite" as const,
     lastSignedIn: new Date(),
-  } as any);
+  } as InsertUser);
   const created = await getUserByEmail(data.email);
   if (!created) throw new Error("Failed to create staff member");
   return created;
@@ -275,7 +276,7 @@ export async function logWebhook(data: {
     statusCode: data.statusCode ?? null,
     success: data.success,
     errorMessage: data.errorMessage ?? null,
-  } as any);
+  });
 }
 
 export async function getWebhookLogs(tenantId: number, limit = 50) {
@@ -414,7 +415,7 @@ export async function updateTicketGhlIds(
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.update(tickets).set(data as any).where(eq(tickets.id, id));
+  await db.update(tickets).set(data as Partial<InsertTicket>).where(eq(tickets.id, id));
 }
 
 // ─── Ticket Notes ─────────────────────────────────────────────────────────────
