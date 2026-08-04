@@ -22,6 +22,7 @@ import {
   MessageCircle,
   ChevronRight,
 } from "lucide-react";
+import { Ticket, ListChecks } from "lucide-react";
 
 // ── CONFIG ─────────────────────────────────────────────────────────────────────
 const DEMO_CALENDAR_URL = "https://api.leadconnectorhq.com/widget/bookings/jimmys-master-calendar";
@@ -229,15 +230,15 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(59,130,246,0.08),transparent)]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-24 pb-12 sm:pb-20 text-center overflow-hidden">
           <Badge variant="secondary" className="mb-5 px-3 py-1.5 text-xs font-semibold tracking-wider uppercase bg-primary/8 text-primary border-primary/20 max-w-full text-center">
-            The only support system built for GHL agencies
+            Built exclusively for GHL agencies
           </Badge>
           <h1 className="font-display text-3xl sm:text-5xl md:text-6xl font-semibold text-slate-900 leading-[1.08] mb-5 text-balance max-w-4xl mx-auto">
-            Voice. Chat. Form.<br />
-            <span className="text-primary italic">Every customer, every channel.</span>
+            The support desk built for GHL agencies.<br />
+            <span className="text-primary italic">Not a workaround. A workflow.</span>
           </h1>
           <p className="text-base sm:text-xl text-slate-500 leading-relaxed mb-6 max-w-2xl mx-auto">
-            Your customers can call, text, WhatsApp, or fill out a form — and every single one creates a support ticket automatically.
-            <strong className="text-slate-700"> $149/month. No contracts. Fully set up for you in 48 hours.</strong>
+            Your clients deserve more than a contact form. AIA SupportDesk gives every issue a ticket number, syncs with GoHighLevel automatically, pushes tasks to ClickUp, and lets customers check their status 24/7 —
+            <strong className="text-slate-700"> without a single manual step from your team.</strong>
           </p>
 
           {/* Channel pills */}
@@ -292,11 +293,11 @@ export default function Home() {
       <section className="bg-slate-900 text-white py-12 sm:py-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="font-display text-3xl md:text-4xl font-semibold mb-6 leading-tight">
-            Your competitors only offer a form.<br />
-            <span className="text-slate-400">You offer three ways to get help.</span>
+            Your competitors offer a form.<br />
+            <span className="text-slate-400">You offer a complete support operation.</span>
           </h2>
           <p className="text-slate-300 text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
-            Most support systems make customers come to them. AIA SupportDesk meets customers wherever they are — on the phone, in a text, or on your website — and handles intake automatically.
+            Most agencies lose tickets in email threads, Slack messages, and sticky notes. AIA SupportDesk connects your intake, your GHL account, and your ClickUp workspace into one seamless support operation — fully set up for you in 48 hours.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
             {[
@@ -310,6 +311,65 @@ export default function Home() {
                 <p className="text-sm text-slate-400 leading-relaxed">{item.label}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+
+      {/* ── CONNECTED PIPELINE ──────────────────────────────────────────────── */}
+      <section className="py-16 sm:py-24 bg-white border-b border-slate-100">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <Badge variant="secondary" className="mb-4 text-xs font-semibold tracking-widest uppercase bg-primary/8 text-primary border-primary/20">
+              Your stack, finally connected
+            </Badge>
+            <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-semibold text-slate-900 mb-4 leading-tight">
+              From <span className="text-primary">&ldquo;I have a problem&rdquo;</span><br className="hidden sm:block" /> to <span className="text-emerald-600">&ldquo;It&apos;s handled&rdquo;</span> &mdash; automatically.
+            </h2>
+            <p className="text-slate-500 text-lg max-w-xl mx-auto">
+              One submission triggers your entire operation. No manual steps. No dropped balls.
+            </p>
+          </div>
+          <div className="relative">
+            <div className="hidden md:block absolute top-10 left-[10%] right-[10%] h-0.5 bg-gradient-to-r from-violet-200 via-primary/30 to-emerald-200 z-0" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-6 relative z-10">
+              {[
+                { step: "01", icon: Mic,        color: "bg-violet-50 text-violet-600 border-violet-200",       label: "Submit",   desc: "Voice, SMS, WhatsApp, or web form — any channel, any time" },
+                { step: "02", icon: Ticket,      color: "bg-blue-50 text-blue-600 border-blue-200",             label: "Track",    desc: "Ticket number generated instantly, customer notified" },
+                { step: "03", icon: Zap,         color: "bg-primary/8 text-primary border-primary/20",          label: "Automate", desc: "GHL contact + opportunity created, sequences triggered" },
+                { step: "04", icon: ListChecks,  color: "bg-amber-50 text-amber-600 border-amber-200",          label: "Assign",   desc: "ClickUp task lands on the right person's board, ready to work" },
+                { step: "05", icon: CheckCircle, color: "bg-emerald-50 text-emerald-600 border-emerald-200",    label: "Resolve",  desc: "Customer checks status anytime. Team closes the loop." },
+              ].map((s) => (
+                <div key={s.step} className="flex flex-col items-center text-center gap-3">
+                  <div className={`w-20 h-20 rounded-2xl border-2 ${s.color} flex items-center justify-center shadow-sm flex-shrink-0`}>
+                    <s.icon className="w-8 h-8" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-300 tracking-widest uppercase">{s.step}</span>
+                  <p className="font-semibold text-slate-900 text-base">{s.label}</p>
+                  <p className="text-sm text-slate-500 leading-relaxed max-w-[160px]">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="mt-14 rounded-2xl bg-slate-50 border border-slate-200 px-6 sm:px-10 py-7 flex flex-col sm:flex-row items-center justify-between gap-5">
+            <div>
+              <p className="font-semibold text-slate-900 text-lg">Ready to see it in action?</p>
+              <p className="text-slate-500 text-sm mt-0.5">We set everything up for you &mdash; GHL automations, ClickUp integration, branded portal. Done in 48 hours.</p>
+            </div>
+            <div className="flex gap-3 flex-shrink-0">
+              <a href={DEMO_CALENDAR_URL} target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="gap-1.5 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 whitespace-nowrap">
+                  <Calendar className="w-3.5 h-3.5" />
+                  Book a Demo
+                </Button>
+              </a>
+              <a href={STRIPE_PAYMENT_URL} target="_blank" rel="noopener noreferrer">
+                <Button size="sm" className="gap-1.5 whitespace-nowrap">
+                  Get Started
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Button>
+              </a>
+            </div>
           </div>
         </div>
       </section>

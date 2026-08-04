@@ -162,3 +162,4 @@
 - [x] Admin Reports: horizontal scroll for tables, responsive charts
 - [x] Public Home page: fix nav overflow, compress hero spacing on mobile
 - [x] Public submit form: already mostly OK, minor padding tweaks
+- [ ] ClickUp → SupportDesk status sync: when a ClickUp task is closed/completed, fire a webhook to our system and auto-update the linked ticket status to "completed"
