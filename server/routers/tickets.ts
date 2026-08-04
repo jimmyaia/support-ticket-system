@@ -29,6 +29,7 @@ import {
   buildGhlNotificationMessages,
   buildGhlCustomFields,
 } from "../ghl";
+import { createClickUpTask } from "../clickup";
 
 async function getPresignedPutUrl(filename: string): Promise<{ uploadUrl: string; publicUrl: string }> {
   const forgeUrl = (ENV.forgeApiUrl ?? "").replace(/\/+$/, "");
@@ -132,6 +133,31 @@ export const ticketsRouter = router({
                 }
                 console.log(`[GHL] Sync complete for ticket ${ticket.ticketNumber}`);
               } catch (err) { console.error("[GHL] Error on ticket submit:", err); }
+            })();
+          }
+          // ClickUp: create task for new ticket (fire-and-forget, non-blocking)
+          if (tenant.clickupApiKey && tenant.clickupListId) {
+            (async () => {
+              try {
+                const adminTicketUrl = `https://${tenant.slug}.aia-supportdesk.com/admin/tickets/${ticket.id}`;
+                const taskId = await createClickUpTask(tenant.clickupApiKey!, tenant.clickupListId!, {
+                  ticketNumber: ticket.ticketNumber,
+                  subject: ticket.subject,
+                  customerName: ticket.name,
+                  customerEmail: ticket.email,
+                  phone: ticket.phone,
+                  priority: ticket.priority,
+                  product: ticket.product,
+                  description: ticket.description,
+                  imageUrl: ticket.imageUrl,
+                  loomUrl: ticket.loomUrl,
+                  ticketUrl: adminTicketUrl,
+                });
+                if (taskId) {
+                  await updateTicketGhlIds(ticket.id, { clickupTaskId: taskId });
+                  console.log(`[ClickUp] Task ${taskId} linked to ticket ${ticket.ticketNumber}`);
+                }
+              } catch (err) { console.error("[ClickUp] Error on ticket submit:", err); }
             })();
           }
         }

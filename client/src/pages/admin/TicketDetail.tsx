@@ -11,6 +11,7 @@ import {
   Send, User, Video, Clock, CheckCircle2, AlertCircle, UserCheck,
   StickyNote, Tag, Activity,
 } from "lucide-react";
+import { Zap } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -320,6 +321,21 @@ export default function AdminTicketDetail({ params }: Props) {
                 </div>
               ))}
             </dl>
+            {/* ClickUp task link */}
+            {ticket.clickupTaskId && (
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <a
+                  href={`https://app.clickup.com/t/${ticket.clickupTaskId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-violet-600 hover:text-violet-700 hover:underline font-medium"
+                >
+                  <Zap className="w-4 h-4" />
+                  View in ClickUp
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            )}
           </div>
 
           {/* Activity Log */}

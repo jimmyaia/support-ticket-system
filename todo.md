@@ -163,3 +163,73 @@
 - [x] Public Home page: fix nav overflow, compress hero spacing on mobile
 - [x] Public submit form: already mostly OK, minor padding tweaks
 - [ ] ClickUp → SupportDesk status sync: when a ClickUp task is closed/completed, fire a webhook to our system and auto-update the linked ticket status to "completed"
+
+## ClickUp Direct Integration Roadmap
+### What this does (plain English)
+Right now ClickUp gets tickets from GHL, but the task names are messy (just contact names) and there are no details inside the tasks. This roadmap connects AIA SupportDesk DIRECTLY to ClickUp — so every ticket automatically creates a perfectly formatted ClickUp task with the ticket number, full description, customer info, images, and a link back to the ticket. Each client (tenant) connects their own ClickUp during onboarding.
+
+### Step 1 — Add ClickUp fields to tenant settings (database)
+- [x] Add two new fields to the tenants table in the database: `clickupApiKey` (the client's ClickUp API token) and `clickupListId` (the ID of the list where support tasks should land)
+- [x] Run the database migration so the new fields are saved
+- [x] These fields work just like the GHL API key — each tenant has their own
+
+### Step 2 — Add ClickUp config to the Super Admin tenant settings page
+- [x] In Super Admin → Tenants → [Tenant], add a new "ClickUp Integration" tab (same style as the GHL tab)
+- [x] Add two input fields: "ClickUp API Key" and "ClickUp List ID"
+- [x] Add a "Test Connection" button that checks if the API key and list ID are valid
+- [x] Add a "Save ClickUp Settings" button
+- [x] Show a green checkmark if connected, red X if not
+
+### Step 3 — Build the ClickUp task creator (server code)
+- [x] Create a new file `server/clickup.ts` that handles all ClickUp API calls
+- [x] Write a `createClickUpTask` function that takes ticket data and creates a task
+- [ ] Task name format: `[TKT-XXXXX] Subject line here — Customer Name`
+  - Example: `[TKT-MSDHEQ6C-8DQ] my automation has a miss spelling — aia sd testing2`
+- [ ] Task description format (all the details inside the task):
+  - Ticket Number: TKT-XXXXX
+  - Customer Name and Email
+  - Priority (Low / Medium / High / Urgent)
+  - Product/Department
+  - Subject
+  - Full description text
+  - Image link (if customer uploaded one)
+  - Loom video link (if customer added one)
+  - Direct link to the ticket in SupportDesk: https://[slug].aia-supportdesk.com/admin/tickets/[id]
+- [ ] Map SupportDesk priority to ClickUp priority (urgent=1, high=2, medium=3, low=4)
+- [x] Map SupportDesk priority to ClickUp priority (urgent=1, high=2, medium=3, low=4)
+- [x] Log success or failure so we can see it in production logs
+
+### Step 4 — Wire ClickUp task creation into ticket submit
+- [x] When a ticket is submitted, AFTER the GHL contact/opportunity is created, also call `createClickUpTask`
+- [x] Only fire if the tenant has a ClickUp API key and List ID configured (skip silently if not set up)
+- [x] If ClickUp creation fails, log the error but do NOT block the ticket from being created — the ticket still saves, GHL still fires, ClickUp failure is just logged
+- [x] Store the resulting ClickUp task ID on the ticket (`clickupTaskId` field) so we can link back to it later
+
+### Step 5 — Show ClickUp task link in ticket detail
+- [x] In the admin ticket detail page, if a ClickUp task ID exists, show a "View in ClickUp" button that opens the task directly
+- [x] This lets support staff jump from SupportDesk to ClickUp with one click
+
+### Step 6 — ClickUp → SupportDesk status sync (close the loop)
+- [ ] Create a public webhook endpoint in our system: `POST /api/webhooks/clickup`
+- [ ] When ClickUp marks a task as complete, it fires this webhook
+- [ ] Our system reads the ClickUp task ID, finds the matching ticket, and automatically updates the ticket status to "completed" with the completion timestamp
+- [ ] Log the webhook event in the activity log: "Ticket completed via ClickUp by [assignee name]"
+- [ ] Tenant must paste our webhook URL into their ClickUp workspace settings during onboarding
+
+### Step 7 — Add ClickUp setup to the onboarding checklist
+- [ ] Update the tenant onboarding flow (or onboarding documentation) to include:
+  1. Generate ClickUp API token (ClickUp → Settings → Apps → API Token)
+  2. Find your ClickUp List ID (open the list in ClickUp, copy the number from the URL)
+  3. Paste both into SupportDesk → Super Admin → Tenants → [Tenant] → ClickUp Integration tab
+  4. Click Test Connection to confirm it works
+  5. Paste the SupportDesk webhook URL into ClickUp workspace settings
+- [ ] Remove the old GHL → ClickUp automation in GHL once this is working (avoids duplicate tasks)
+
+### Step 8 — Test the full flow end-to-end
+- [ ] Submit a test ticket on a tenant portal
+- [ ] Verify: ticket created in SupportDesk ✓
+- [ ] Verify: GHL contact + opportunity created ✓
+- [ ] Verify: ClickUp task created with correct name format and full description ✓
+- [ ] Verify: ClickUp task has correct priority ✓
+- [ ] Verify: "View in ClickUp" button appears in ticket detail ✓
+- [ ] Mark the ClickUp task complete → verify ticket auto-updates to "completed" in SupportDesk ✓

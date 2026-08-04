@@ -57,6 +57,13 @@
       "when": 1785863870337,
       "tag": "0007_confused_medusa",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1785868311773,
+      "tag": "0008_stormy_bastion",
+      "breakpoints": true
     }
   ]
 }

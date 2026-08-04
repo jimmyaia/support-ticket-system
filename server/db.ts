@@ -411,7 +411,7 @@ export async function assignTicket(id: number, assigneeId: number | null) {
 
 export async function updateTicketGhlIds(
   id: number,
-  data: { ghlContactId?: string; ghlOpportunityId?: string }
+  data: { ghlContactId?: string; ghlOpportunityId?: string; clickupTaskId?: string }
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");

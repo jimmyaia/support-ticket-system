@@ -24,6 +24,7 @@ import { protectedProcedure, router } from "../_core/trpc";
 import { IMPERSONATE_COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { getGhlPipelines } from "../ghl";
+import { testClickUpConnection } from "../clickup";
 
 // Only super-admins (role=admin, no tenantId) can manage tenants
 const superAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -396,5 +397,25 @@ export const tenantsRouter = router({
       if (!tenant || !tenant.isActive) throw new TRPCError({ code: "NOT_FOUND" });
       // Return only public-safe fields
       return { id: tenant.id, name: tenant.name, slug: tenant.slug, logoUrl: tenant.logoUrl };
+    }),
+  // Super admin: save ClickUp config (API key + list ID)
+  saveClickUpConfig: superAdminProcedure
+    .input(
+      z.object({
+        tenantId: z.number().int(),
+        clickupApiKey: z.string().min(1).max(500),
+        clickupListId: z.string().min(1).max(100),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { tenantId, ...data } = input;
+      await updateTenant(tenantId, data as Partial<InsertTenant>);
+      return { success: true };
+    }),
+  // Super admin: test ClickUp API key + list ID
+  testClickUpConnection: superAdminProcedure
+    .input(z.object({ apiKey: z.string().min(1), listId: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      return testClickUpConnection(input.apiKey, input.listId);
     }),
 });

@@ -17,6 +17,7 @@ import {
   GripVertical, CheckCircle2, XCircle, Send,
   StickyNote, Settings, Eye
 } from "lucide-react";
+import { ExternalLink, Zap } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function TenantDetail() {
@@ -120,6 +121,19 @@ export default function TenantDetail() {
   const [slugValue, setSlugValue] = useState<string>("");
   // currentSlug computed after tenant is available (see below)
 
+  // ClickUp integration state
+  const [clickupApiKey, setClickupApiKey] = useState("");
+  const [clickupListId, setClickupListId] = useState("");
+  const [clickupTesting, setClickupTesting] = useState(false);
+  const saveClickUpConfig = trpc.tenants.saveClickUpConfig.useMutation({
+    onSuccess: () => { toast.success("ClickUp config saved"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const testClickUpConn = trpc.tenants.testClickUpConnection.useMutation({
+    onSuccess: (r) => r.ok ? toast.success(`ClickUp connected ✓ — List: "${r.listName}"`) : toast.error(`ClickUp test failed: ${r.error}`),
+    onError: (e) => toast.error(e.message),
+  });
+
   const startImpersonation = trpc.tenants.startImpersonation.useMutation({
     onSuccess: (data) => {
       toast.success(`Now viewing as ${data.tenantName}`);
@@ -142,6 +156,8 @@ export default function TenantDetail() {
       ghlFieldTicketUrl: t.ghlFieldTicketUrl ?? "",
       ghlFieldLoomUrl: t.ghlFieldLoomUrl ?? "",
     }));
+    if (t.clickupApiKey) setClickupApiKey(t.clickupApiKey);
+    if (t.clickupListId) setClickupListId(t.clickupListId);
   }, [data?.tenant?.id]);
 
   if (isLoading) {
@@ -210,6 +226,7 @@ export default function TenantDetail() {
         <TabsList className="mb-6">
           <TabsTrigger value="settings" className="gap-2"><Settings className="w-4 h-4" />Settings</TabsTrigger>
           <TabsTrigger value="ghl" className="gap-2"><Webhook className="w-4 h-4" />GHL Integration</TabsTrigger>
+          <TabsTrigger value="clickup" className="gap-2"><Zap className="w-4 h-4" />ClickUp</TabsTrigger>
           <TabsTrigger value="products" className="gap-2"><Package className="w-4 h-4" />Product Dropdown</TabsTrigger>
           <TabsTrigger value="logs" className="gap-2"><Activity className="w-4 h-4" />Webhook Logs</TabsTrigger>
         </TabsList>
@@ -575,6 +592,94 @@ export default function TenantDetail() {
 
         {/* Product Dropdown Tab */}
         <TabsContent value="products">
+        {/* ClickUp Integration Tab */}
+        <TabsContent value="clickup">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-violet-500" />
+                ClickUp Integration
+                {tenant.clickupListId
+                  ? <Badge className="bg-violet-500/10 text-violet-700 border-violet-200">Configured</Badge>
+                  : <Badge variant="outline">Not Configured</Badge>
+                }
+              </CardTitle>
+              <CardDescription>
+                When a new ticket is submitted, a task is automatically created in the specified ClickUp list.
+                Enter your Personal API Token and the List ID where tasks should land.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {tenant.clickupListId && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-violet-50 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800 text-sm">
+                  <CheckCircle2 className="w-4 h-4 text-violet-600 shrink-0" />
+                  <span className="text-violet-700 dark:text-violet-300">
+                    ClickUp is configured. List ID: <span className="font-mono font-semibold">{tenant.clickupListId}</span>
+                  </span>
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label>Personal API Token</Label>
+                <Input
+                  type="password"
+                  placeholder="pk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={clickupApiKey}
+                  onChange={e => setClickupApiKey(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Find your token at{" "}
+                  <a href="https://app.clickup.com/settings/apps" target="_blank" rel="noopener noreferrer" className="underline text-primary inline-flex items-center gap-0.5">
+                    ClickUp → Settings → Apps <ExternalLink className="w-3 h-3" />
+                  </a>
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>List ID</Label>
+                <Input
+                  placeholder="e.g. 901234567890"
+                  value={clickupListId}
+                  onChange={e => setClickupListId(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Open the target list in ClickUp → click the "…" menu → "Copy link". The numeric ID is the last segment of the URL.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  disabled={!clickupApiKey || !clickupListId || testClickUpConn.isPending || clickupTesting}
+                  onClick={async () => {
+                    setClickupTesting(true);
+                    try {
+                      await testClickUpConn.mutateAsync({ apiKey: clickupApiKey, listId: clickupListId });
+                    } finally {
+                      setClickupTesting(false);
+                    }
+                  }}
+                >
+                  {clickupTesting ? "Testing…" : "Test Connection"}
+                </Button>
+                <Button
+                  disabled={!clickupApiKey || !clickupListId || saveClickUpConfig.isPending}
+                  onClick={() => saveClickUpConfig.mutate({ tenantId, clickupApiKey, clickupListId })}
+                >
+                  {saveClickUpConfig.isPending ? "Saving…" : "Save ClickUp Config"}
+                </Button>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="font-medium text-sm">How it works</h4>
+                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>A customer submits a support ticket on the portal.</li>
+                  <li>SupportDesk creates a task in your ClickUp list automatically.</li>
+                  <li>The task includes the ticket number, customer details, description, and a direct link back to the ticket.</li>
+                  <li>The ClickUp task ID is stored on the ticket so admins can jump directly to it.</li>
+                </ol>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Package className="w-5 h-5" />Product / Service Dropdown</CardTitle>

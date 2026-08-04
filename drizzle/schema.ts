@@ -59,6 +59,9 @@ export const tenants = mysqlTable("tenants", {
   ghlWebhookNewTicket: boolean("ghlWebhookNewTicket").default(true).notNull(),
   ghlWebhookStatusChange: boolean("ghlWebhookStatusChange").default(true).notNull(),
   ghlWebhookAssignment: boolean("ghlWebhookAssignment").default(true).notNull(),
+  // ClickUp integration
+  clickupApiKey: varchar("clickupApiKey", { length: 500 }),       // ClickUp personal API token
+  clickupListId: varchar("clickupListId", { length: 100 }),       // ClickUp list ID where tasks land
   // Internal notes (super-admin only)
   internalNotes: text("internalNotes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -99,6 +102,7 @@ export const tickets = mysqlTable("tickets", {
   loomUrl: varchar("loomUrl", { length: 1000 }),
   ghlContactId: varchar("ghlContactId", { length: 100 }),        // GHL contact matched/created on submit
   ghlOpportunityId: varchar("ghlOpportunityId", { length: 100 }), // GHL opportunity created on submit
+  clickupTaskId: varchar("clickupTaskId", { length: 100 }),       // ClickUp task created on submit
   resolvedAt: timestamp("resolvedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
