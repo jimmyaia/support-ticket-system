@@ -98,9 +98,11 @@ export const ticketsRouter = router({
           if (tenant.ghlApiKey && tenant.ghlLocationId) {
             (async () => {
               try {
+                console.log(`[GHL] Starting sync for ticket ${ticket.ticketNumber} (tenant ${tenant.id})`);
                 const contactId = await upsertGhlContact(tenant.ghlApiKey!, tenant.ghlLocationId!, {
                   name: ticket.name, email: ticket.email, phone: ticket.phone ?? undefined,
                 });
+                console.log(`[GHL] Contact upserted: ${contactId} for ${ticket.email}`);
                 let opportunityId: string | undefined;
                 if (tenant.ghlPipelineId && tenant.ghlStageNew) {
                   opportunityId = await createGhlOpportunity(tenant.ghlApiKey!, tenant.ghlLocationId!, {
@@ -116,13 +118,19 @@ export const ticketsRouter = router({
                       loomUrl: ticket.loomUrl,
                     }),
                   });
+                  console.log(`[GHL] Opportunity created: ${opportunityId}`);
+                } else {
+                  console.log(`[GHL] Skipping opportunity — pipelineId=${tenant.ghlPipelineId} stageNew=${tenant.ghlStageNew}`);
                 }
                 await updateTicketGhlIds(ticket.id, { ghlContactId: contactId, ghlOpportunityId: opportunityId });
                 const msgs = buildGhlNotificationMessages("new", { name: ticket.name, ticketNumber: ticket.ticketNumber, subject: ticket.subject, statusPageUrl: buildStatusPageUrl(tenant.slug, ticket.ticketNumber) });
                 if (msgs && contactId) {
                   if (tenant.ghlSendEmail) await sendGhlEmail(tenant.ghlApiKey!, tenant.ghlLocationId!, { contactId, toEmail: ticket.email, subject: msgs.subject, body: msgs.emailHtml });
                   if (tenant.ghlSendSms && ticket.phone) await sendGhlSms(tenant.ghlApiKey!, tenant.ghlLocationId!, { contactId, toPhone: ticket.phone, message: msgs.smsText });
+                } else {
+                  console.log(`[GHL] Notifications skipped — msgs=${!!msgs} contactId=${contactId} sendEmail=${tenant.ghlSendEmail} sendSms=${tenant.ghlSendSms}`);
                 }
+                console.log(`[GHL] Sync complete for ticket ${ticket.ticketNumber}`);
               } catch (err) { console.error("[GHL] Error on ticket submit:", err); }
             })();
           }

@@ -12,13 +12,22 @@
  */
 
 const GHL_BASE = "https://services.leadconnectorhq.com";
-const GHL_VERSION = "2021-07-28";
+const GHL_VERSION = "2021-07-28";  // used for contacts/opportunities
+const GHL_VERSION_MSG = "2021-04-15"; // used for conversations/messages (send API)
 
 function ghlHeaders(apiKey: string) {
   return {
     Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
     Version: GHL_VERSION,
+  };
+}
+
+function ghlMsgHeaders(apiKey: string) {
+  return {
+    Authorization: `Bearer ${apiKey}`,
+    "Content-Type": "application/json",
+    Version: GHL_VERSION_MSG,
   };
 }
 
@@ -220,23 +229,24 @@ export async function sendGhlEmail(
     body: string; // HTML or plain text
   }
 ): Promise<void> {
-  const resp = await fetch(`${GHL_BASE}/conversations/messages/outbound`, {
+  // Use the correct "send a new message" endpoint (not /outbound which is for logging external calls)
+  const resp = await fetch(`${GHL_BASE}/conversations/messages`, {
     method: "POST",
-    headers: ghlHeaders(apiKey),
+    headers: ghlMsgHeaders(apiKey),
     body: JSON.stringify({
-      locationId,
       contactId: data.contactId,
       type: "Email",
       subject: data.subject,
       html: data.body,
-      to: data.toEmail,
+      emailTo: data.toEmail,
     }),
   });
 
   if (!resp.ok) {
     const err = await resp.text();
     console.error(`[GHL] Send email failed: ${resp.status} ${err}`);
-    // Non-fatal: log but don't throw so ticket flow continues
+  } else {
+    console.log(`[GHL] Email sent to ${data.toEmail} for contact ${data.contactId}`);
   }
 }
 
@@ -252,22 +262,23 @@ export async function sendGhlSms(
     message: string;
   }
 ): Promise<void> {
-  const resp = await fetch(`${GHL_BASE}/conversations/messages/outbound`, {
+  // Use the correct "send a new message" endpoint (not /outbound which is for logging external calls)
+  const resp = await fetch(`${GHL_BASE}/conversations/messages`, {
     method: "POST",
-    headers: ghlHeaders(apiKey),
+    headers: ghlMsgHeaders(apiKey),
     body: JSON.stringify({
-      locationId,
       contactId: data.contactId,
       type: "SMS",
       message: data.message,
-      to: data.toPhone,
+      toNumber: data.toPhone,
     }),
   });
 
   if (!resp.ok) {
     const err = await resp.text();
     console.error(`[GHL] Send SMS failed: ${resp.status} ${err}`);
-    // Non-fatal: log but don't throw
+  } else {
+    console.log(`[GHL] SMS sent to ${data.toPhone} for contact ${data.contactId}`);
   }
 }
 
