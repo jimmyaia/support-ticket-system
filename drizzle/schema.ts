@@ -62,6 +62,7 @@ export const tenants = mysqlTable("tenants", {
   // ClickUp integration
   clickupApiKey: varchar("clickupApiKey", { length: 500 }),       // ClickUp personal API token
   clickupListId: varchar("clickupListId", { length: 100 }),       // ClickUp list ID where tasks land
+  clickupWebhookSecret: varchar("clickupWebhookSecret", { length: 500 }), // HMAC secret returned when webhook is registered
   // Internal notes (super-admin only)
   internalNotes: text("internalNotes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

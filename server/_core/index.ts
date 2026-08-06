@@ -10,6 +10,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { storagePut } from "../storage";
+import { handleClickUpWebhook } from "../clickupWebhook";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -77,6 +78,13 @@ async function startServer() {
         res.status(500).json({ error: "Upload failed" });
       }
     }
+  );
+
+  // ── ClickUp webhook (MUST be before global body parsers — needs raw body for HMAC) ──
+  app.post(
+    "/api/webhooks/clickup",
+    express.raw({ type: "application/json", limit: "1mb" }),
+    handleClickUpWebhook
   );
 
   // ── Body size limits (tight — no reason to accept 50 MB JSON) ──────────────

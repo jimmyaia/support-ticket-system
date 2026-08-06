@@ -64,6 +64,13 @@
       "when": 1785868311773,
       "tag": "0008_stormy_bastion",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1786033200000,
+      "tag": "0009_clickup_webhook_secret",
+      "breakpoints": true
     }
   ]
 }

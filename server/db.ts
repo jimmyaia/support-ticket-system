@@ -553,3 +553,16 @@ export async function getTicketActivity(ticketId: number): Promise<TicketActivit
     .where(eq(ticketActivity.ticketId, ticketId))
     .orderBy(asc(ticketActivity.createdAt));
 }
+
+// ─── ClickUp helpers ──────────────────────────────────────────────────────────
+
+export async function getTicketByClickUpTaskId(clickupTaskId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(tickets)
+    .where(eq(tickets.clickupTaskId, clickupTaskId))
+    .limit(1);
+  return result[0];
+}

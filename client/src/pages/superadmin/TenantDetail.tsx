@@ -124,6 +124,7 @@ export default function TenantDetail() {
   // ClickUp integration state
   const [clickupApiKey, setClickupApiKey] = useState("");
   const [clickupListId, setClickupListId] = useState("");
+  const [clickupWebhookSecret, setClickupWebhookSecret] = useState("");
   const [clickupTesting, setClickupTesting] = useState(false);
   const saveClickUpConfig = trpc.tenants.saveClickUpConfig.useMutation({
     onSuccess: () => { toast.success("ClickUp config saved"); refetch(); },
@@ -158,6 +159,7 @@ export default function TenantDetail() {
     }));
     if (t.clickupApiKey) setClickupApiKey(t.clickupApiKey);
     if (t.clickupListId) setClickupListId(t.clickupListId);
+    if ((t as any).clickupWebhookSecret) setClickupWebhookSecret((t as any).clickupWebhookSecret);
   }, [data?.tenant?.id]);
 
   if (isLoading) {
@@ -661,20 +663,68 @@ export default function TenantDetail() {
                 </Button>
                 <Button
                   disabled={!clickupApiKey || !clickupListId || saveClickUpConfig.isPending}
-                  onClick={() => saveClickUpConfig.mutate({ tenantId, clickupApiKey, clickupListId })}
+                  onClick={() => saveClickUpConfig.mutate({ tenantId, clickupApiKey, clickupListId, ...(clickupWebhookSecret ? { clickupWebhookSecret } : {}) })}
                 >
                   {saveClickUpConfig.isPending ? "Saving…" : "Save ClickUp Config"}
                 </Button>
               </div>
               <Separator />
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-sm mb-1">Status Sync — ClickUp → SupportDesk</h4>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    When you change a task status in ClickUp, it automatically updates the ticket status here.
+                    Register the webhook URL below in your ClickUp workspace settings.
+                  </p>
+                  <div className="space-y-2">
+                    <Label>Your Webhook URL (paste this into ClickUp)</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        readOnly
+                        value={`https://${tenant.slug}.aia-supportdesk.com/api/webhooks/clickup`}
+                        className="font-mono text-xs bg-muted"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`https://${tenant.slug}.aia-supportdesk.com/api/webhooks/clickup`);
+                          toast.success("Webhook URL copied!");
+                        }}
+                      >
+                        Copy
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      In ClickUp: Settings → Integrations → Webhooks → Add Webhook → paste this URL and select the <strong>taskStatusUpdated</strong> event.
+                    </p>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    <Label>Webhook Secret (optional but recommended)</Label>
+                    <Input
+                      type="password"
+                      placeholder="Paste the secret ClickUp shows after creating the webhook"
+                      value={clickupWebhookSecret}
+                      onChange={e => setClickupWebhookSecret(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      ClickUp shows this secret once when you create the webhook. Paste it here to enable signature verification.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <Separator />
               <div className="space-y-2">
-                <h4 className="font-medium text-sm">How it works</h4>
-                <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>A customer submits a support ticket on the portal.</li>
-                  <li>SupportDesk creates a task in your ClickUp list automatically.</li>
-                  <li>The task includes the ticket number, customer details, description, and a direct link back to the ticket.</li>
-                  <li>The ClickUp task ID is stored on the ticket so admins can jump directly to it.</li>
-                </ol>
+                <h4 className="font-medium text-sm">Status mapping</h4>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>ClickUp statuses are mapped automatically:</p>
+                  <ul className="list-disc list-inside space-y-0.5 mt-1">
+                    <li><strong>complete / done</strong> → Completed</li>
+                    <li><strong>in progress</strong> → In Progress</li>
+                    <li><strong>stuck</strong> → Stuck</li>
+                    <li><strong>close / closed</strong> → Closed</li>
+                  </ul>
+                </div>
               </div>
             </CardContent>
           </Card>

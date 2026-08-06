@@ -398,13 +398,14 @@ export const tenantsRouter = router({
       // Return only public-safe fields
       return { id: tenant.id, name: tenant.name, slug: tenant.slug, logoUrl: tenant.logoUrl };
     }),
-  // Super admin: save ClickUp config (API key + list ID)
+  // Super admin: save ClickUp config (API key + list ID + optional webhook secret)
   saveClickUpConfig: superAdminProcedure
     .input(
       z.object({
         tenantId: z.number().int(),
         clickupApiKey: z.string().min(1).max(500),
         clickupListId: z.string().min(1).max(100),
+        clickupWebhookSecret: z.string().max(500).optional(),
       })
     )
     .mutation(async ({ input }) => {
