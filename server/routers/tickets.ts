@@ -422,17 +422,7 @@ export const ticketsRouter = router({
       return getTenantProducts(tenant.id);
     }),
 
-  // Staff/Admin: get activity log for a ticket
-  getActivity: staffOrAdminProcedure
-    .input(z.object({ ticketId: z.number().int() }))
-    .query(async ({ input, ctx }) => {
-      const tenantId = ctx.user.tenantId ?? undefined;
-      const ticket = await getTicketById(input.ticketId, tenantId);
-      if (!ticket) throw new TRPCError({ code: "NOT_FOUND", message: "Ticket not found" });
-      return getTicketActivity(input.ticketId);
-    }),
-
-  // Public: get a presigned S3 PUT URL for ticket image attachments (client-side upload)
+    // Public: get a presigned S3 PUT URL for ticket image attachments (client-side upload)
   getUploadUrl: publicProcedure
     .input(z.object({ filename: z.string().min(1).max(255), contentType: z.string().min(1).max(100) }))
     .mutation(async ({ input }) => {
