@@ -236,31 +236,69 @@ export default function Home() {
             The support desk built for GHL agencies.<br />
             <span className="text-primary italic">Not a workaround. A workflow.</span>
           </h1>
-          <p className="text-base sm:text-xl text-slate-500 leading-relaxed mb-6 max-w-2xl mx-auto">
-            Your clients deserve more than a contact form. AIA SupportDesk gives every issue a ticket number, syncs with GoHighLevel automatically, pushes tasks to ClickUp, and lets customers check their status 24/7 —
-            <strong className="text-slate-700"> without a single manual step from your team.</strong>
-          </p>
+          <div className="mb-10 max-w-5xl mx-auto">
+            <h2 className="font-display text-2xl sm:text-3xl font-semibold leading-tight text-slate-900 mb-3">
+              One ticket number.<br />
+              <span className="text-primary italic">Four ways in.</span>
+            </h2>
+            <p className="text-base sm:text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto mb-6">
+              Give every request one ticket number — whether a customer fills out a form, starts a chat, sends a text, or calls for help.
+            </p>
 
-          {/* Channel pills */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-violet-50 border border-violet-200 text-violet-700 text-sm font-medium">
-              <Mic className="w-3.5 h-3.5" />
-              Voice Bot
-            </div>
-            <div className="text-slate-300 text-lg">+</div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-medium">
-              <MessageCircle className="w-3.5 h-3.5" />
-              SMS & WhatsApp Bot
-            </div>
-            <div className="text-slate-300 text-lg">+</div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-sm font-medium">
-              <FileText className="w-3.5 h-3.5" />
-              Web Form
-            </div>
-            <div className="text-slate-300 text-lg">=</div>
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900 text-white text-sm font-medium">
-              <Zap className="w-3.5 h-3.5" />
-              One Dashboard
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-left">
+              {[
+                {
+                  icon: FileText,
+                  iconClass: "bg-blue-50 text-blue-600",
+                  title: "Web Form",
+                  description: "Submit an issue in seconds",
+                  action: "Try it",
+                  href: "/submit",
+                },
+                {
+                  icon: MessageCircle,
+                  iconClass: "bg-emerald-50 text-emerald-600",
+                  title: "Live Chat",
+                  description: "Start a conversation now",
+                  action: "Chat now",
+                  href: "#channels",
+                },
+                {
+                  icon: MessageSquare,
+                  iconClass: "bg-teal-50 text-teal-600",
+                  title: "Text Us",
+                  description: "Support that meets you there",
+                  action: "Text us",
+                  href: "#channels",
+                },
+                {
+                  icon: Phone,
+                  iconClass: "bg-violet-50 text-violet-600",
+                  title: "Call Us",
+                  description: "Talk to support your way",
+                  action: "Call now",
+                  href: "#channels",
+                },
+              ].map((channel) => {
+                const Icon = channel.icon;
+                return (
+                  <a
+                    key={channel.title}
+                    href={channel.href}
+                    className="group flex min-h-44 flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  >
+                    <span className={`mb-4 flex h-9 w-9 items-center justify-center rounded-lg ${channel.iconClass}`}>
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="text-base font-semibold text-slate-900">{channel.title}</span>
+                    <span className="mt-1 text-sm leading-snug text-slate-500">{channel.description}</span>
+                    <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition-transform duration-200 group-hover:translate-x-0.5">
+                      {channel.action}
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </span>
+                  </a>
+                );
+              })}
             </div>
           </div>
 

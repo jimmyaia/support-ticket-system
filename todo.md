@@ -84,7 +84,7 @@
 - [x] CreateTenant form: auto-format slug input and live URL preview
 - [x] Fixed OneTouch Media slug from 'onetouch-media' to 'onetouch' (deleted duplicate tenant ID 1)
 - [ ] Stripe paywall ($149/mo subscription before registration)
-- [ ] Path-based tenant routing (/t/:slug/) for demo before domain connection
+- [x] ~~Path-based tenant routing (/t/:slug/) — removed from scope; live subdomain routing is instant, no need for this~~
 - [x] True subdomain routing once aia-supportdesk.com is connected — live via Cloudflare Worker
 - [ ] Self-service tenant registration flow
 - [x] Email notifications via GHL — implemented in tickets router (sendGhlEmail/sendGhlSms on status change and ticket submit)
@@ -251,9 +251,13 @@ Right now ClickUp gets tickets from GHL, but the task names are messy (just cont
 ### todo.md Corrections
 - [x] Marked all ClickUp Steps 3–8 items as complete (task name format, description format, priority mapping, Step 6 webhook sync, Step 7 onboarding, Step 8 testing — all implemented)
 - [x] Duplicate priority mapping entry (one `[ ]` and one `[x]` for the same item) cleaned up
+- [x] Apply the missing database schema update for the `clickupWebhookSecret` tenant field so the synchronized ClickUp webhook code can query tenants successfully.
 
 ### Remaining Pending Work (Future)
 - [ ] Stripe paywall ($149/mo subscription before registration)
-- [ ] Path-based tenant routing (/t/:slug/) for demo before domain connection
+- [x] ~~Path-based tenant routing (/t/:slug/) — removed from scope; live subdomain routing is instant, no need for this~~
 - [ ] Self-service tenant registration flow
 - [ ] Drag-to-reorder product dropdown (GripVertical icon is present but drag logic not wired)
+
+## Homepage Hero Refresh
+- [x] Replace the current hero detail copy and channel pills with a responsive four-card "One ticket number. Four ways in." contact section (Web Form, Live Chat, Text Us, Call Us), while preserving the existing headline, primary buttons, and trust points.
