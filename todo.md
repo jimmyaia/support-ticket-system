@@ -257,7 +257,7 @@ Right now ClickUp gets tickets from GHL, but the task names are messy (just cont
 - [ ] Stripe paywall ($149/mo subscription before registration)
 - [x] ~~Path-based tenant routing (/t/:slug/) — removed from scope; live subdomain routing is instant, no need for this~~
 - [ ] Self-service tenant registration flow
-- [ ] Drag-to-reorder product dropdown (GripVertical icon is present but drag logic not wired)
+- [x] Drag-to-reorder product dropdown with persistent ordering plus mobile-friendly up/down controls.
 
 ## Homepage Hero Refresh
 - [x] Replace the current hero detail copy and channel pills with a responsive four-card "One ticket number. Four ways in." contact section (Web Form, Live Chat, Text Us, Call Us), while preserving the existing headline, primary buttons, and trust points.

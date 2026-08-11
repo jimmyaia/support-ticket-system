@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, Package, Plus, Trash2, GripVertical, Settings, KeyRound } from "lucide-react";
+import { Building2, Package, Plus, Trash2, GripVertical, Settings, KeyRound, ChevronDown, ChevronUp } from "lucide-react";
 
 const passwordSchema = z.object({
   currentPassword: z.string().optional(),
@@ -39,6 +39,7 @@ export default function TenantSettings() {
   const { user } = useAuth();
   const tenantId = user?.tenantId ?? null;
   const [newProduct, setNewProduct] = useState("");
+  const [draggedProductId, setDraggedProductId] = useState<number | null>(null);
   const hasPassword = !!user?.passwordHash;
 
   const { data: tenant, isLoading: tenantLoading, refetch: refetchTenant } = trpc.tenants.getMyTenant.useQuery(undefined, {
@@ -69,6 +70,39 @@ export default function TenantSettings() {
     onSuccess: () => { refetchProducts(); toast.success("Product removed"); },
     onError: (e) => toast.error(e.message),
   });
+
+  const reorderProducts = trpc.tenants.reorderProducts.useMutation({
+    onSuccess: () => { refetchProducts(); toast.success("Product order saved"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const saveProductOrder = (productIds: number[]) => {
+    if (!tenantId || reorderProducts.isPending) return;
+    reorderProducts.mutate({ tenantId, productIds });
+  };
+
+  const moveProduct = (productId: number, direction: -1 | 1) => {
+    if (!products) return;
+    const sourceIndex = products.findIndex((product) => product.id === productId);
+    const targetIndex = sourceIndex + direction;
+    if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= products.length) return;
+    const reordered = [...products];
+    const [movedProduct] = reordered.splice(sourceIndex, 1);
+    reordered.splice(targetIndex, 0, movedProduct);
+    saveProductOrder(reordered.map((product) => product.id));
+  };
+
+  const handleProductDrop = (targetProductId: number) => {
+    if (!products || draggedProductId === null || draggedProductId === targetProductId) return;
+    const sourceIndex = products.findIndex((product) => product.id === draggedProductId);
+    const targetIndex = products.findIndex((product) => product.id === targetProductId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    const reordered = [...products];
+    const [movedProduct] = reordered.splice(sourceIndex, 1);
+    reordered.splice(targetIndex, 0, movedProduct);
+    setDraggedProductId(null);
+    saveProductOrder(reordered.map((product) => product.id));
+  };
 
   const {
     register: regPwd,
@@ -221,7 +255,7 @@ export default function TenantSettings() {
             </CardTitle>
             <CardDescription>
               These options appear in the "Which product are you having trouble with?" dropdown on your customer ticket form.
-              Toggle to show/hide without deleting.
+              Drag to reorder, or use the arrow controls on mobile. Toggle to show or hide without deleting.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -264,9 +298,39 @@ export default function TenantSettings() {
             ) : (
               <div className="space-y-2">
                 {products.map((product, idx) => (
-                  <div key={product.id} className={`flex items-center gap-3 p-3 rounded-lg border transition-opacity ${!product.isActive ? "opacity-50" : ""}`}>
-                    <GripVertical className="w-4 h-4 text-muted-foreground" />
+                  <div
+                    key={product.id}
+                    draggable={!reorderProducts.isPending}
+                    onDragStart={() => setDraggedProductId(product.id)}
+                    onDragEnd={() => setDraggedProductId(null)}
+                    onDragOver={(event) => event.preventDefault()}
+                    onDrop={() => handleProductDrop(product.id)}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${draggedProductId === product.id ? "opacity-40 border-primary" : ""} ${!product.isActive ? "opacity-50" : ""}`}
+                  >
+                    <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" aria-hidden="true" />
                     <span className="flex-1 font-medium text-sm">{product.label}</span>
+                    <div className="flex items-center gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-7 h-7"
+                        aria-label={`Move ${product.label} up`}
+                        onClick={() => moveProduct(product.id, -1)}
+                        disabled={idx === 0 || reorderProducts.isPending}
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-7 h-7"
+                        aria-label={`Move ${product.label} down`}
+                        onClick={() => moveProduct(product.id, 1)}
+                        disabled={idx === products.length - 1 || reorderProducts.isPending}
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <Badge variant="outline" className="text-xs">#{idx + 1}</Badge>
                     <Switch
                       checked={product.isActive}

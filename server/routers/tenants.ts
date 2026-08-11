@@ -13,6 +13,7 @@ import {
   getWebhookLogs,
   addTenantProduct,
   updateTenantProduct,
+  reorderTenantProducts,
   deleteTenantProduct,
   listTenants,
   updateTenant,
@@ -290,6 +291,32 @@ export const tenantsRouter = router({
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
       await updateTenantProduct(id, data);
+      return { success: true };
+    }),
+
+  reorderProducts: tenantAdminProcedure
+    .input(z.object({
+      tenantId: z.number().int(),
+      productIds: z.array(z.number().int()).min(1),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (ctx.user.tenantId !== null && ctx.user.tenantId !== input.tenantId) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      const existingProducts = await getAllTenantProducts(input.tenantId);
+      const existingIds = new Set(existingProducts.map((product) => product.id));
+      const submittedIds = new Set(input.productIds);
+      const isExactTenantProductSet =
+        existingIds.size === input.productIds.length &&
+        submittedIds.size === input.productIds.length &&
+        input.productIds.every((id) => existingIds.has(id));
+
+      if (!isExactTenantProductSet) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Product order does not match this tenant's products." });
+      }
+
+      await reorderTenantProducts(input.tenantId, input.productIds);
       return { success: true };
     }),
 

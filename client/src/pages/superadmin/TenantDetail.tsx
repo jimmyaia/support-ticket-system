@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
   ArrowLeft, Building2, Webhook, Package, Activity, Plus, Trash2,
-  GripVertical, CheckCircle2, XCircle, Send,
+  GripVertical, CheckCircle2, XCircle, Send, ChevronDown, ChevronUp,
   StickyNote, Settings, Eye
 } from "lucide-react";
 import { ExternalLink, Zap } from "lucide-react";
@@ -24,6 +24,7 @@ export default function TenantDetail() {
   const [, params] = useRoute("/superadmin/tenants/:id");
   const tenantId = parseInt(params?.id ?? "0");
   const [newProduct, setNewProduct] = useState("");
+  const [draggedProductId, setDraggedProductId] = useState<number | null>(null);
 
   const { data, isLoading, refetch } = trpc.tenants.getById.useQuery({ id: tenantId });
   const utils = trpc.useUtils();
@@ -45,6 +46,11 @@ export default function TenantDetail() {
 
   const deleteProduct = trpc.tenants.deleteProduct.useMutation({
     onSuccess: () => { refetch(); toast.success("Product removed"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const reorderProducts = trpc.tenants.reorderProducts.useMutation({
+    onSuccess: () => { refetch(); toast.success("Product order saved"); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -176,6 +182,33 @@ export default function TenantDetail() {
   const { tenant, products, webhookLogs } = data;
   const ghlConnected = !!tenant.ghlWebhookUrl;
   const currentSlug = slugValue || tenant.slug;
+
+  const saveProductOrder = (productIds: number[]) => {
+    if (reorderProducts.isPending) return;
+    reorderProducts.mutate({ tenantId, productIds });
+  };
+
+  const moveProduct = (productId: number, direction: -1 | 1) => {
+    const sourceIndex = products.findIndex((product) => product.id === productId);
+    const targetIndex = sourceIndex + direction;
+    if (sourceIndex < 0 || targetIndex < 0 || targetIndex >= products.length) return;
+    const reordered = [...products];
+    const [movedProduct] = reordered.splice(sourceIndex, 1);
+    reordered.splice(targetIndex, 0, movedProduct);
+    saveProductOrder(reordered.map((product) => product.id));
+  };
+
+  const handleProductDrop = (targetProductId: number) => {
+    if (draggedProductId === null || draggedProductId === targetProductId) return;
+    const sourceIndex = products.findIndex((product) => product.id === draggedProductId);
+    const targetIndex = products.findIndex((product) => product.id === targetProductId);
+    if (sourceIndex < 0 || targetIndex < 0) return;
+    const reordered = [...products];
+    const [movedProduct] = reordered.splice(sourceIndex, 1);
+    reordered.splice(targetIndex, 0, movedProduct);
+    setDraggedProductId(null);
+    saveProductOrder(reordered.map((product) => product.id));
+  };
 
   const handleSaveSettings = () => {
     const slugToSave = slugValue || tenant?.slug;
@@ -735,7 +768,7 @@ export default function TenantDetail() {
               <CardTitle className="flex items-center gap-2"><Package className="w-5 h-5" />Product / Service Dropdown</CardTitle>
               <CardDescription>
                 These options appear in the "Which product are you having trouble with?" dropdown on the customer ticket form.
-                Drag to reorder (coming soon), toggle to hide without deleting.
+                Drag to reorder, or use the arrow controls on mobile. Toggle to hide without deleting.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -771,9 +804,39 @@ export default function TenantDetail() {
               ) : (
                 <div className="space-y-2">
                   {products.map((product, idx) => (
-                    <div key={product.id} className={`flex items-center gap-3 p-3 rounded-lg border ${!product.isActive ? "opacity-50" : ""}`}>
-                      <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
+                    <div
+                      key={product.id}
+                      draggable={!reorderProducts.isPending}
+                      onDragStart={() => setDraggedProductId(product.id)}
+                      onDragEnd={() => setDraggedProductId(null)}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={() => handleProductDrop(product.id)}
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${draggedProductId === product.id ? "opacity-40 border-primary" : ""} ${!product.isActive ? "opacity-50" : ""}`}
+                    >
+                      <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" aria-hidden="true" />
                       <span className="flex-1 font-medium">{product.label}</span>
+                      <div className="flex items-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-7 h-7"
+                          aria-label={`Move ${product.label} up`}
+                          onClick={() => moveProduct(product.id, -1)}
+                          disabled={idx === 0 || reorderProducts.isPending}
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="w-7 h-7"
+                          aria-label={`Move ${product.label} down`}
+                          onClick={() => moveProduct(product.id, 1)}
+                          disabled={idx === products.length - 1 || reorderProducts.isPending}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+                      </div>
                       <Badge variant="outline" className="text-xs">#{idx + 1}</Badge>
                       <Switch
                         checked={product.isActive}

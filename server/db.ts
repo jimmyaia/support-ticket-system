@@ -247,6 +247,21 @@ export async function updateTenantProduct(id: number, data: Partial<InsertTenant
   await db.update(tenantProducts).set(data as Partial<typeof tenantProducts.$inferInsert>).where(eq(tenantProducts.id, id));
 }
 
+export async function reorderTenantProducts(tenantId: number, productIds: number[]) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.transaction(async (tx) => {
+    for (let sortOrder = 0; sortOrder < productIds.length; sortOrder += 1) {
+      const productId = productIds[sortOrder];
+      await tx
+        .update(tenantProducts)
+        .set({ sortOrder })
+        .where(and(eq(tenantProducts.id, productId), eq(tenantProducts.tenantId, tenantId)));
+    }
+  });
+}
+
 export async function deleteTenantProduct(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
