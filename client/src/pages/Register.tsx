@@ -18,7 +18,7 @@ export default function Register() {
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: async () => {
       await utils.auth.me.invalidate();
-      toast.success("Account created! Welcome.");
+      toast.success("Administrator account created. Welcome.");
       navigate("/admin");
     },
     onError: (err) => {
@@ -48,8 +48,8 @@ export default function Register() {
               <span className="font-display text-xl font-semibold text-foreground">SupportDesk</span>
             </div>
           </Link>
-          <h1 className="mt-6 text-2xl font-display font-medium text-foreground">Create your account</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">Join the support team</p>
+          <h1 className="mt-6 text-2xl font-display font-medium text-foreground">Set up SupportDesk</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">Create the first administrator account</p>
         </div>
 
         {/* Card */}
@@ -116,13 +116,17 @@ export default function Register() {
               {registerMutation.isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Creating account...
+                  Creating administrator account...
                 </>
               ) : (
-                "Create Account"
+                "Create Administrator Account"
               )}
             </Button>
           </form>
+
+          <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+            This setup page is only available until the first administrator account is created.
+          </p>
 
           <div className="mt-5 pt-5 border-t border-border/40 text-center">
             <p className="text-sm text-muted-foreground">

@@ -29,8 +29,23 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const existing = await db.getUserByEmail(input.email);
         if (existing) throw new TRPCError({ code: "CONFLICT", message: "An account with this email already exists." });
+
+        // The public setup form is only for establishing the first global administrator.
+        // Afterwards, staff accounts must be provisioned from the admin workspace.
+        if (await db.hasGlobalAdmin()) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Self-registration is unavailable. Ask an administrator to create your staff account.",
+          });
+        }
+
         const passwordHash = await hashPassword(input.password);
-        const user = await db.createUser({ name: input.name, email: input.email, passwordHash });
+        const user = await db.createUser({
+          name: input.name,
+          email: input.email,
+          passwordHash,
+          role: "admin",
+        });
         const token = await createSessionToken(user.id, user.email!, user.role);
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 24 * 7 });
@@ -51,11 +66,19 @@ export const appRouter = router({
         if (!valid) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid email or password." });
         }
+        // Recover deployments that were created before first-account provisioning
+        // assigned the administrator role correctly.
+        let role = user.role;
+        if (role === "user" && !(await db.hasGlobalAdmin())) {
+          await db.updateUserRole(user.id, "admin");
+          role = "admin";
+        }
+
         await db.updateLastSignedIn(user.id);
-        const token = await createSessionToken(user.id, user.email!, user.role);
+        const token = await createSessionToken(user.id, user.email!, role);
         const cookieOptions = getSessionCookieOptions(ctx.req);
         ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 1000 * 60 * 60 * 24 * 7 });
-        return { user: { id: user.id, name: user.name, email: user.email, role: user.role } };
+        return { user: { id: user.id, name: user.name, email: user.email, role } };
       }),
 
     logout: publicProcedure.mutation(({ ctx }) => {

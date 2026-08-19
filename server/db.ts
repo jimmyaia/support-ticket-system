@@ -78,6 +78,19 @@ export async function updateLastSignedIn(userId: number): Promise<void> {
   await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
 }
 
+/** True once the application has an initial, global administrator. */
+export async function hasGlobalAdmin(): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(users)
+    .where(sql`${users.role} = 'admin' AND ${users.tenantId} IS NULL`);
+
+  return Number(result?.count ?? 0) > 0;
+}
+
 export async function getAllStaff(tenantId?: number) {
   const db = await getDb();
   if (!db) return [];
